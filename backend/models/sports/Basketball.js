@@ -1,15 +1,14 @@
 const mongoose = require('mongoose');
 const Game = require('../Game');
 
-const basketballSchemna = mongoose.Schema({
+const basketballSchema = new mongoose.Schema({
     stat: [{
-        required: [true, 'Stats is required.'],
         player: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Player',
             required: [true, 'Player is required.'],
         },
-        minutes: {
+        min: {
             type: Number,
             required: [true, 'Minutes is required.'],
             default: 0,
@@ -24,12 +23,12 @@ const basketballSchemna = mongoose.Schema({
             required: [true, 'Field goals attempts is required'],
             default: 0,
         },
-        threeptm: {
+        threeptm: { // 3PM
             type: Number,
             required: [true, 'Three pointers made is required'],
             default: 0,
         },
-        threeptsa: {
+        threeptsa: { // 3PA
             type: Number,
             required: [true, 'Three pointers attempted is required'],
             default: 0,
@@ -49,22 +48,22 @@ const basketballSchemna = mongoose.Schema({
             required: [true, 'Free throws attempted is required'],
             default: 0,
         },
-        rebounds: {
+        rebounds: { // REB
             type: Number,
             required: [true, 'Rebounds is required'],
             default: 0,
         },
-        assists: {
+        assists: { // AST
             type: Number,
             required: [true, 'Assists is required'],
             default: 0,
         },
-        blocks: {
+        blocks: { // BLK
             type: Number,
             required: [true, 'Blocks is required'],
             default: 0,
         },
-        steals: {
+        steals: { // STL
             type: Number,
             required: [true, 'Steals is required'],
             default: 0,
@@ -79,7 +78,7 @@ const basketballSchemna = mongoose.Schema({
             required: [true, 'Turnovers is required'],
             default: 0,
         },
-        points: {
+        points: { // PTS
             type: Number,
             required: [true, 'Points is required'],
             default: 0,
@@ -87,4 +86,4 @@ const basketballSchemna = mongoose.Schema({
     }],
 });
 
-module.exports = Game.discriminator('Basketball', basketballSchemna);
+module.exports = Game.discriminator('Basketball', basketballSchema);

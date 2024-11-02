@@ -1,20 +1,16 @@
 const mongoose = require('mongoose');
 
-const playerSchema = mongoose.Schema ({
+const playerSchema = new mongoose.Schema ({
    name: {
         type: String,
         required: [true, 'Player name is required.'],
+        match: [/^[A-Za-z\s]{2,50}$/, 'Player name must be between 2 and 50 characters long and can only include letters and spaces.'],
    },
    birthdate: {
         type: Date,
         required: [true, 'birthdate is required.'],
         min: [new Date(new Date().setFullYear(new Date().getFullYear() - 6)), 'Player must be 6 years old or older.'], 
         max: [new Date(new Date().setFullYear(new Date().getFullYear() + 100)), 'Player must be 100 years old or younger.'],
-        validation: {
-            validator: function (value) {
-                // Validate birthdate Regex format
-            },
-        },
    },
    sex: {
         type: String,
@@ -22,7 +18,6 @@ const playerSchema = mongoose.Schema ({
         enum: ['Male', 'Female'], // Drop-down menu selection
    },
    height: {
-    required: [true, 'Height required.'],
     feet: {
         type: Number,
         required: [true, 'Feet required.'], // Drop-down menu selection
@@ -34,24 +29,34 @@ const playerSchema = mongoose.Schema ({
         min: [0, 'Inches cannot be negative.'],
         max: [11, 'Inches must be at most 11.'], 
     },
+    required: [true, 'Height required.'],
    },
    weight: {
         type: Number,
         required: [true, 'Weight required.'], 
         min: [0, 'Weight(lbs) cannot be negative.'],
    },
-   leagues: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'League',
-        required: [true, 'League required.'],
-   }],
-   teams: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'League',
-        required: [true, 'Team required.'],
-   }],
+   position: {
+     type: String,
+     required: [true, 'Position is required.'],
+   },
 });
 
-
-
 module.exports = mongoose.model('player', playerSchema);
+
+/**
+ * In League Settings: managers inpute teams and then players
+ * There will be multiple player profiles of the same person
+ * New player profiles per league, so someone who plays n sports in n legaues has n profiles
+ * 
+ * Profile:
+ * Name
+ * Birthday
+ * Sex
+ * Measurements
+ * League
+ * 
+ * Stats:
+ * Total 
+ * Season (Chronological order)
+ */
