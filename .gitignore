@@ -4,4 +4,5 @@
 *.pem
 */coverage
 */logs
-*/test
+*/*.test.js
+*/__tests__
