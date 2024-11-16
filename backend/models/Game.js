@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const gameSchema = new mongoose.Schema ({
+const gameSchema = new mongoose.Schema({
     sport: {
         type: String,
         required: [true, 'Sport category is required.'],
@@ -25,7 +25,7 @@ const gameSchema = new mongoose.Schema ({
             required: [true, 'Score is required.'],
         }
     }],
-    result: [{
+    result: {
         winner: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Team',
@@ -47,11 +47,11 @@ const gameSchema = new mongoose.Schema ({
                 message: 'Tie must be true if both winner and loser are null, otherwise false.',
             }
         }
-    }],
+    },
 });
 
 // Validation for two unique teams
-gameSchema.path('teams').validate(function(value) {
+gameSchema.path('teams').validate(function (value) {
     // Check if there are exactly two teams
     if (value.length !== 2) {
         throw new Error('Teams array must contain exactly two teams.');

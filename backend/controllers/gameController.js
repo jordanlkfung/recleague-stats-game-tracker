@@ -1,11 +1,25 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const Basketball = require('../models/sports/Basketball');
 Game = mongoose.model('Game');
 
+
 exports.newGame = async function (req, res) {
+    //TODO: CHECK FOR SPORT AND MAKE MODEL BASED ON THAT
+    const { sport, date, time, teams } = req.body;
     var newGame = req.body;
     try {
+        if (req.body.sport === 'basketball') {
+            newGame = new Basketball({
+                sport: sport,
+                date: date,
+                time: time,
+                teams: teams,
+            })
+
+        }
         const savedGame = newGame.save();
         res.status(201).json(savedGame);
+        //return id for game
     }
     catch (e) {
         res.status(500).send({ message: e });
@@ -13,7 +27,7 @@ exports.newGame = async function (req, res) {
 }
 exports.getTeams = async function (req, res) {
     try {
-        const teams = await Game.find({ _id: req.params._id }, { teams: 1 }).populate();
+        const teams = await Game.find({ _id: req.params._id }, { teams: 1 }).populate('teams');
         res.status(200).json(teams);
     }
     catch (e) {
@@ -51,3 +65,74 @@ exports.setResult = async function (req, res) {
         res.status(500).send({ message: e })
     }
 }
+
+exports.addAllBasketballGameStats = async function (req, res) {
+    try {
+        const newGame = await Basketball.findOneAndUpdate(req.body._id, req.body.stats);
+    }
+    catch (e) {
+
+    }
+}
+
+exports.updateBasketballGameStats = async function (req, res) {
+    try {
+        const updatedGame = await Basketball.findOneAndUpdate({ '_id': req.body._id },
+            { $set: { 'stats': req.body.stats } },
+            { new: true }
+        )
+    }
+    catch (e) {
+        res.status(500).send({ message: e })
+    }
+}
+
+exports.updateGameScore = async function (req, res) {
+    try {
+        Game.updateOne(
+            { _id: req.body._id, 'teams._id': req.body.team1 },
+            { $set: { 'teams.$.score': req.body.team1.score } }
+        )
+            .then(() => {
+                return Game.updateOne(
+                    { _id: req.body._id, 'teams._id': req.body.team2 },
+                    { $set: { 'teams.$.score': req.body.team2.score } }
+                );
+            })
+        res.status(200);
+    }
+    catch (e) {
+
+    }
+}
+
+exports.updateGameStatsAndResults = async function (req, res) {
+    try {
+        const updatedGame = await Game.findOne({ '_id': req.body._id });
+        if (updatedGame) {
+            updatedGame.team[req.body.team1].score = req.body.team1.score;
+            updatedGame.team[req.body.team2].score = req.body.team2.score;
+            if (req.body.tie) {
+                updatedGame.result.tie = true;
+            } else {
+                updatedGame.result.winner = req.body.team1;
+                updatedGame.result.loser = req.body.team2;
+            }
+            updatedGame.save();
+            res.status(200).send(updatedGame);
+        }
+    }
+    catch (e) {
+        res.status(500).send({ message: e })
+    }
+}
+exports.getAllBasketballGameStats = async function (req, res) {
+    try {
+        const gameStats = await Basketball.findOne({ '_id': req.body._id });
+        res.send(gameStats.stats);
+    }
+    catch (e) {
+        res.status(500).send({ message: e })
+    }
+}
+
