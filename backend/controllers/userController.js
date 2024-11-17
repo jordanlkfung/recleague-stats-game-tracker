@@ -12,8 +12,8 @@ exports.addUser = async function (req, res) {
         const savedUser = await newUser.save();
         res.status(201).json(savedUser);
     }
-    catch (error) {
-        res.status(500).send({ message: 'An error has occured while adding new User'});
+    catch (err) {
+        res.status(500).send({ message: err});
     }
 }; // Duplicate email, invalid email, and invalid password tests PASSED
 
