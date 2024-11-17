@@ -5,7 +5,7 @@ const leagueSchema = new mongoose.Schema({
         type: String,
         required: [true, 'League name is required.'],
         unique: true,
-        match: [/^[A-Za-z\s]{3,30}$/, 'Team name must be between 3 and 30 characters long and can only include letters and spaces.'],
+        match: [/^[A-Za-z\s]{3,100}$/, 'Team name must be between 3 and 100 characters long and can only include letters and spaces.'],
     },
     sport: {
         type: String,
@@ -57,6 +57,9 @@ leagueSchema.path('teams').validate(function(value) {
     // Use a Set to ensure all teams are unique
     return value.length === new Set(value.map(team => team.toString())).size;
 }, 'Teams must contain unique teams.');
+
+// Add presave for name, seasons, managers, and teams uniqueness
+// Figure out a way to automate seasons id (maybe startdate and enddate combined)
 
 module.exports = mongoose.model('League', leagueSchema);
 

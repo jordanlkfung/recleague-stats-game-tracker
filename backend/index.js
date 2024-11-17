@@ -37,6 +37,11 @@ User = require('./models/User.js');
 var userRoute = require('./routes/userRoutes.js');
 app.use('/user', userRoute);
 
+// League Route
+League = require('./models/League.js');
+var leagueRoute = require('./routes/leagueRoutes.js');
+app.use('/league', leagueRoute);
+
 app.all('*', (req, res) => {
     res.status(404);
     if(req.accepts('html')) {
