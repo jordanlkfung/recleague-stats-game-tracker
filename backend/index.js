@@ -6,11 +6,11 @@ const path = require('path');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const { logger } = require('./middlewares/logger');
-const errorHandler = require('./middlewares/errorHandler');
+const { logger } = require('./middlewares/logger.js');
+const errorHandler = require('./middlewares/errorHandler.js');
 const cors = require('cors');
-const corsOptions = require('./config/corsOptions');
-const PORT = process.env.PORT || 3000;
+const corsOptions = require('./config/corsOptions.js');
+const PORT = process.env.PORT || 5000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -19,7 +19,7 @@ app.use('/', express.static(path.join(__dirname, 'public')));
 
 app.use(cookieParser());
 
-app.use(cors)
+app.use(cors())
 
 app.use(errorHandler);
 
@@ -32,11 +32,15 @@ mongoose.Promise = global.Promise;
 mongoose.connect(process.env.DB_URI);
 
 /** Routes */
+// User Route
+User = require('./models/User.js');
+var userRoute = require('./routes/userRoutes.js');
+app.use('/user', userRoute);
 
 app.all('*', (req, res) => {
     res.status(404);
     if(req.accepts('html')) {
-        res.sendFile(path.join(__dirname, 'views', '404.html'));
+        res.sendFile(path.join(__dirname, 'public', '404.html'));
     }
     else if(req.accepts('json')) {
         req.json({message: '404 Not Found'});
