@@ -6,8 +6,10 @@ Game = mongoose.model('Game');
 exports.newGame = async function (req, res) {
     //TODO: CHECK FOR SPORT AND MAKE MODEL BASED ON THAT
     const { sport, date, time, teams } = req.body;
-    var newGame = req.body;
+    const sports = ['football', 'soccer', 'baseball', 'volleyball', 'basketball'];
     try {
+        if (req.body.sport)
+            var newGame = req.body;
         if (req.body.sport === 'basketball') {
             newGame = new Basketball({
                 sport: sport,
@@ -15,14 +17,24 @@ exports.newGame = async function (req, res) {
                 time: time,
                 teams: teams,
             })
+        }
+        else if (req.body.sport === 'football') {
+
+        }
+        else if (req.body.sport === 'soccer') {
+
+        }
+        else if (req.body.sport === 'baseball') {
+
+        }
+        else if (req.body.sport === 'volleyball') {
 
         }
         const savedGame = newGame.save();
-        res.status(201).json(savedGame);
-        //return id for game
+        res.status(201).json({ 'id': savedGame._id });
     }
     catch (e) {
-        res.status(500).send({ message: e });
+        res.status(500).send({ 'message': e });
     }
 }
 exports.getTeams = async function (req, res) {
