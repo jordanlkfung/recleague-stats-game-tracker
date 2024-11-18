@@ -12,11 +12,7 @@ const leagueSchema = new mongoose.Schema({
         required: [true, 'Sport category is required.'],
         enum: ['Baseball', 'Basketball', 'Football', 'Soccer', 'Volleyball'], // Drop-down menu selection
     },
-    seasons: [{ 
-        id: {
-            type: Number,
-            required: [true, 'Season ID required.'],
-        },
+    seasons: [{
         start_date: {
             type: Date,
             required: [true, 'Start date is required.'],
@@ -31,6 +27,10 @@ const leagueSchema = new mongoose.Schema({
                 message: 'End date must be after start date.',
             }
         },
+        games: [{
+            type: mongoose.Chema.Types.ObjectId,
+            ref: 'Game'
+        }],
         complete: {
             type: Boolean,
             required: [true, 'Completed season is required.'],
@@ -47,13 +47,13 @@ const leagueSchema = new mongoose.Schema({
 });
 
 // Custom validation for unique mangaers in the managers array
-leagueSchema.path('managers').validate(function(value) {
+leagueSchema.path('managers').validate(function (value) {
     // Use a Set to ensure all managers are unique
     return value.length === new Set(value.map(manager => manager.toString())).size;
 }, 'Managers must contain unique managers.');
 
 // Custom validation for unique teams in the teams array
-leagueSchema.path('teams').validate(function(value) {
+leagueSchema.path('teams').validate(function (value) {
     // Use a Set to ensure all teams are unique
     return value.length === new Set(value.map(team => team.toString())).size;
 }, 'Teams must contain unique teams.');

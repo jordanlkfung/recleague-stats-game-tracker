@@ -13,7 +13,7 @@ exports.addUser = async function (req, res) {
         res.status(201).json(savedUser);
     }
     catch (err) {
-        res.status(500).send({ message: err});
+        res.status(500).send({ message: 'An error has occured' });
     }
 }; // Duplicate email, invalid email, and invalid password tests PASSED
 
@@ -23,7 +23,7 @@ exports.getAllUsers = async function (req, res) {
         const users = await User.find({});
         res.status(200).json(users);
     } catch (err) {
-        res.status(500).send({message: 'An error has occured while getting all Users'});
+        res.status(500).send({ message: 'An error has occured while getting all Users' });
     }
 }; // Test PASSED
 
@@ -33,13 +33,13 @@ exports.getUser = async function (req, res) {
     try {
         const user = await User.findById(req.params._id);
         if (user) {
-          res.status(200).json(user);
+            res.status(200).json(user);
         } else {
-          res.status(404).send({message: 'User not found.'});
+            res.status(404).send({ message: 'User not found.' });
         }
-      } catch (err) {
-        res.status(500).send({message: 'An error occurred retrieving user.'});
-      }
+    } catch (err) {
+        res.status(500).send({ message: 'An error occurred retrieving user.' });
+    }
 }; // Test Passed
 
 /** /user/:_id/leagues */
@@ -52,7 +52,7 @@ exports.getUserLeagues = async function (req, res) {
             return res.status(404).send({ message: 'User not found.' }); // Can populate leagues array with the League objects instead of ids
         }
 
-        res.status(200).json(user.leagues); 
+        res.status(200).json(user.leagues);
     } catch (err) {
         console.error(err);
         res.status(500).send({ message: 'An error occurred while retrieving the user leagues.' });
@@ -63,31 +63,31 @@ exports.getUserLeagues = async function (req, res) {
 // PATCH add or remove league to user
 exports.modifyLeaguesForUser = async function (req, res) {
     const userId = req.params._id;
-    const { addLeagueId, removeLeagueId } = req.body; 
+    const { addLeagueId, removeLeagueId } = req.body;
 
     try {
         const updateObj = {};
 
         if (addLeagueId) {
-            updateObj.$addToSet = { leagues: addLeagueId }; 
+            updateObj.$addToSet = { leagues: addLeagueId };
         }
 
         if (removeLeagueId) {
-            updateObj.$pull = { leagues: removeLeagueId }; 
+            updateObj.$pull = { leagues: removeLeagueId };
         }
 
         if (Object.keys(updateObj).length > 0) {
             const user = await User.findByIdAndUpdate(
                 userId,
                 updateObj,
-                { new: true } 
+                { new: true }
             ); // Can populate leagues array with the League objects instead of ids
 
             if (!user) {
                 return res.status(404).send({ message: 'User not found.' });
             }
 
-            res.status(200).json(user.leagues); 
+            res.status(200).json(user.leagues);
         } else {
             res.status(400).send({ message: 'No valid fields provided for update.' });
         }
