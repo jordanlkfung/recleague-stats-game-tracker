@@ -164,3 +164,18 @@ exports.modifySeasonsForLeague = async function (req, res) {
         res.status(500).send({ message: 'An error occured while attempting to modify seasons' });
     }
 }
+
+exports.getLeaguesBySport = async function (req, res) {
+    try {
+        const leagues = await League.find({ sport: req.params.sport });
+        if (!leagues) {
+            res.status(404).send({ message: 'No leagues with entered sport were found' });
+        }
+        else {
+            res.status(200).send(leagues);
+        }
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error occured' });
+    }
+}

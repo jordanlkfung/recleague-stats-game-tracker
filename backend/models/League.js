@@ -51,7 +51,7 @@ const leagueSchema = new mongoose.Schema({
 });
 
 //Generating Unique Identifier for seasons
-leagueSchema.pre('save', function (seasons) {
+leagueSchema.pre('save', function (next) {
     seasons.forEach(season => {
         season.uniqueIdentifier = season.start_date.toISOString().split('T')[0].replace(/-/g, '') + season.end_date.toISOString().split('T')[0].replace(/-/g, '');
     });

@@ -18,4 +18,6 @@ router.route("/:_id/seasons")
     .get(controller.getLeagueSeasons)
     .patch(controller.modifySeasonsForLeague);
 
+router.route("/:sport").get(controller.getLeaguesBySport)
+
 module.exports = router;
