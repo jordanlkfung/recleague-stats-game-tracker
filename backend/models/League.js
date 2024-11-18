@@ -28,9 +28,13 @@ const leagueSchema = new mongoose.Schema({
             }
         },
         games: [{
-            type: mongoose.Chema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
             ref: 'Game'
         }],
+        uniqueIdentifier: {
+            type: String,
+            unique: true
+        },
         complete: {
             type: Boolean,
             required: [true, 'Completed season is required.'],
@@ -45,6 +49,13 @@ const leagueSchema = new mongoose.Schema({
         ref: 'Team',
     }],
 });
+
+//Generating Unique Identifier for seasons
+leagueSchema.pre('save', function (seasons) {
+    seasons.forEach(season => {
+        season.uniqueIdentifier = season.start_date.toISOString().split('T')[0].replace(/-/g, '') + season.end_date.toISOString().split('T')[0].replace(/-/g, '');
+    });
+})
 
 // Custom validation for unique mangaers in the managers array
 leagueSchema.path('managers').validate(function (value) {
