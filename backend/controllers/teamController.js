@@ -44,7 +44,7 @@ exports.modifyLeagues = async function (req, res) {
         }
 
         if (leaguesToJoin || leaguesToLeave) {
-            const team = await Team.findByIdAndUpdate(req.body._id, updateObj, { new: true });
+            const team = await Team.findByIdAndUpdate(req.params._id, updateObj, { new: true });
             if (!team) {
                 res.status(404).send({ message: 'Team not found' });
             }

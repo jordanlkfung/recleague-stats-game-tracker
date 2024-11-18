@@ -84,6 +84,9 @@ exports.modifyLeagueTeams = async function (req, res) {
 
             res.status(201).send(updatedTeam);
         }
+        else {
+            res.status(400).send({ message: 'No valid fields provided for update.' });
+        }
     }
     catch (e) {
         res.status(500).send({ message: 'An error occured' })
