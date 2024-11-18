@@ -13,7 +13,7 @@ exports.getRoster = async function (req, res) {
         }
     }
     catch (e) {
-        res.status(500).send({ message: e });
+        res.status(500).send({ message: 'An error occured while fetching rosters' });
     }
 }
 

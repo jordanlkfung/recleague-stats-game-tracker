@@ -52,12 +52,15 @@ exports.setResult = async function (req, res) {
         if (!req.body.tie) {
             const updatedGame = Game.findOneAndUpdate({ _id: req.body._id }, {
                 $set: {
-                    'teams.$[team].score': req.body.team1.score,
-                    'teams.$[team].score': req.body.team2.score,
+                    'teams.$[team1].score': req.body.team1.score,
+                    'teams.$[team2].score': req.body.team2.score,
                     'result.winner': req.body.team1._id,
                     'result.loser': req.body.team2._id
                 }
-            }, { arrayFilers: [{ '_id': req.body.team1._id }, { '_id': req.body.team2._id }], new: true });
+            }, {
+                arrayFilers: [{ 'team1._id': req.body.team1._id }, //means for the first update _id is equal to the passed in ID
+                { 'team2._id': req.body.team2._id }], new: true
+            });
             res.status(201).send(updatedGame);
         }
         else {
@@ -80,24 +83,17 @@ exports.setResult = async function (req, res) {
 
 exports.addAllBasketballGameStats = async function (req, res) {
     try {
-        const newGame = await Basketball.findOneAndUpdate(req.body._id, req.body.stats);
+        const newGame = await Basketball.findOneAndUpdate(req.body._id, req.body.stats, { new: true });
+        if (!newGame) {
+            res.status(404).send({ message: 'Game was not found' });
+        }
+        res.status(200).send(newGame);
     }
     catch (e) {
-
+        res.status(500).send({ message: 'An error has occured' });
     }
 }
 
-exports.updateBasketballGameStats = async function (req, res) {
-    try {
-        const updatedGame = await Basketball.findOneAndUpdate({ '_id': req.body._id },
-            { $set: { 'stats': req.body.stats } },
-            { new: true }
-        )
-    }
-    catch (e) {
-        res.status(500).send({ message: e })
-    }
-}
 
 exports.updateGameScore = async function (req, res) {
     try {

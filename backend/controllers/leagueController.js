@@ -49,7 +49,32 @@ exports.getLeagueManagers = async function (req, res) {
 
 // PATCH Add or remove managers
 exports.modifyManagersForLeague = async function (req, res) {
+    const { managersToAdd, managersToRemove } = req.body;
+    try {
+        const updateObj = {};
+        if (managersToAdd) {
+            updateObj.$addToSet = isArray(managersToAdd) ? { managers: { $each: managersToAdd } } : { managers: managersToAdd };
+        }
+        if (managersToRemove) {
+            updateObj.$pull = isArray(managersToRemove) ? { managers: { $each: managersToRemove } } : { managers: managersToRemove };
+        }
 
+        if (managersToRemove || managersToAdd) {
+            const managers = await League.findByIdAndUpdate(req.params._id, updateObj, { new: true });
+            if (managers) {
+                res.status(200).send(managers);
+            }
+            else {
+                res.status(404).send({ message: 'League not found' });
+            }
+        }
+        else {
+            res.status(400).send({ message: 'No valid fields provided for update.' });
+        }
+    }
+    catch (e) {
+        res.status(500).send({ message: 'Error occured while modify managers' });
+    }
 };
 
 /** /leagues/:_id/teams*/
@@ -113,5 +138,29 @@ exports.getLeagueSeasons = async function (req, res) {
 
 // PATCH Add or remove seasons
 exports.modifySeasonsForLeague = async function (req, res) {
-
+    const { seasonToAdd, seasonToDelete } = req.body;
+    try {
+        const updateObj = {};
+        if (seasonToAdd) {
+            updateObj.$addToSet = { seasons: seasonToAdd };
+        }
+        if (seasonToDelete) {
+            updateObj.$pull = { seasons: seasonToDelete };
+        }
+        if (seasonToAdd || seasonToDelete) {
+            const seasons = await League.findByIdAndUpdate(req.params._id, updateObj, { new: true });
+            if (seasons) {
+                res.status(200).send(seasons);
+            }
+            else {
+                res.status(404).send({ message: 'League not found' });
+            }
+        }
+        else {
+            res.status(400).send({ message: 'No fields provided for update' });
+        }
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error occured while attempting to modify seasons' });
+    }
 }
