@@ -42,13 +42,17 @@ League = require('./models/League.js');
 var leagueRoute = require('./routes/leagueRoutes.js');
 app.use('/league', leagueRoute);
 
+Team = require('./models/Team.js');
+var teamRoute = require('./routes/teamRoutes.js');
+app.use('/team', teamRoute);
+
 app.all('*', (req, res) => {
     res.status(404);
-    if(req.accepts('html')) {
+    if (req.accepts('html')) {
         res.sendFile(path.join(__dirname, 'public', '404.html'));
     }
-    else if(req.accepts('json')) {
-        req.json({message: '404 Not Found'});
+    else if (req.accepts('json')) {
+        req.json({ message: '404 Not Found' });
     }
     else {
         res.type('txt').send('404 Not Found');

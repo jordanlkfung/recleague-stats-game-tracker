@@ -102,7 +102,7 @@ exports.modifyLeagueTeams = async function (req, res) {
                 return res.status(404).send({ message: 'League not found.' });
             }
 
-            res.status(201).send(updatedTeam);
+            res.status(201).send(updatedLeague);
         }
         else {
             res.status(400).send({ message: 'No valid fields provided for update.' });
@@ -162,7 +162,7 @@ exports.modifySeasonsForLeague = async function (req, res) {
 
 exports.getLeaguesBySport = async function (req, res) {
     try {
-        const leagues = await League.find({ sport: req.params.sport });
+        const leagues = await League.find({ 'sport': req.params.sport });
         if (!leagues) {
             res.status(404).send({ message: 'No leagues with entered sport were found' });
         }

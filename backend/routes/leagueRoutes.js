@@ -10,9 +10,9 @@ router.route("/:_id/managers")
     .get(controller.getLeagueManagers)
     .patch(controller.modifyManagersForLeague);
 
-// router.route("/:_id/teams")
-//     .get(controller.getLeagueTeams)
-//     .patch(controller.modifyTeamsForLeague);
+router.route("/:_id/teams")
+    .get(controller.getLeagueTeams)
+    .patch(controller.modifyLeagueTeams);
 
 router.route("/:_id/seasons")
     .get(controller.getLeagueSeasons)
