@@ -2,6 +2,28 @@ const mongoose = require('mongoose');
 const Team = require('../models/Team');
 Team = mongoose.model('Team');
 
+/** /team */
+//GET get all teams
+exports.getAllTeams = async function (req, res) {
+    try {
+        const teams = Team.find({});
+        res.status(200).send(teams);
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error occured' });
+    }
+}
+//POST Add team
+exports.addTeam = async function (req, res) {
+    var team = new Team(req.body)
+    try {
+        const newTeam = await team.save();
+        res.status(201).send(newTeam);
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error occured' });
+    }
+}
 /** /team/:_id/roster */
 //GET Get team roster
 exports.getRoster = async function (req, res) {
