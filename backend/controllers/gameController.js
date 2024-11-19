@@ -6,32 +6,42 @@ Game = mongoose.model('Game');
 exports.newGame = async function (req, res) {
     //TODO: CHECK FOR SPORT AND MAKE MODEL BASED ON THAT
     const { sport, date, time, teams } = req.body;
-    const sports = ['football', 'soccer', 'baseball', 'volleyball', 'basketball'];
+    const sports = ['Football', 'Soccer', 'Baseball', 'Volleyball', 'Basketball'];
     try {
-        if (req.body.sport)
-            var newGame = req.body;
-        if (req.body.sport === 'basketball') {
-            newGame = new Basketball({
-                sport: sport,
-                date: date,
-                time: time,
-                teams: teams,
-            })
-        }
-        else if (req.body.sport === 'football') {
+        if (sport) {
+            var newGame;
+            if (sport === 'Basketball') {
+                newGame = new Basketball({
+                    sport: sport,
+                    date: date,
+                    time: time,
+                    teams: teams,
+                })
+            }
+            else if (sport === 'Football') {
 
-        }
-        else if (req.body.sport === 'soccer') {
+            }
+            else if (sport === 'Soccer') {
 
-        }
-        else if (req.body.sport === 'baseball') {
+            }
+            else if (sport === 'Baseball') {
 
-        }
-        else if (req.body.sport === 'volleyball') {
+            }
+            else if (sport === 'Volleyball') {
 
+            }
+            else {
+
+            }
+            if (newGame) {
+                const savedGame = newGame.save();
+                res.status(201).send({ 'id': savedGame._id });
+            }
+            res.status(400).send({ message: 'Invalid sport provided' })
         }
-        const savedGame = newGame.save();
-        res.status(201).json({ 'id': savedGame._id });
+        else {
+            res.status(400).send({ message: 'No sport provided' })
+        }
     }
     catch (e) {
         res.status(500).send({ 'message': e });
@@ -95,25 +105,6 @@ exports.addAllBasketballGameStats = async function (req, res) {
 }
 
 
-exports.updateGameScore = async function (req, res) {
-    try {
-        Game.updateOne(
-            { _id: req.body._id, 'teams._id': req.body.team1 },
-            { $set: { 'teams.$.score': req.body.team1.score } }
-        )
-            .then(() => {
-                return Game.updateOne(
-                    { _id: req.body._id, 'teams._id': req.body.team2 },
-                    { $set: { 'teams.$.score': req.body.team2.score } }
-                );
-            })
-        res.status(200);
-    }
-    catch (e) {
-
-    }
-}
-
 exports.updateGameStatsAndResults = async function (req, res) {
     try {
         const updatedGame = await Game.findOne({ '_id': req.body._id });
@@ -140,7 +131,31 @@ exports.getAllBasketballGameStats = async function (req, res) {
         res.send(gameStats.stats);
     }
     catch (e) {
-        res.status(500).send({ message: e })
+        res.status(500).send({ message: e });
+    }
+}
+
+exports.modifyGameTime = async function (req, res) {
+    try {
+        const newGame = await Game.findByIdAndUpdate(req.params.__id, { $set: { time: req.body.newTime } }, { new: true });
+        if (!newGame) {
+            res.status(404).send({ message: 'Game not found' });
+        }
+        else {
+            res.status(200).send(newGame);
+        }
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error occured while attempting to change game time' });
+    }
+}
+
+exports.modifyGameDate = async function (req, res) {
+    try {
+
+    }
+    catch (e) {
+
     }
 }
 

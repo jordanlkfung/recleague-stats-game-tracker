@@ -18,12 +18,6 @@ exports.addLeague = async function (req, res) {
 exports.getAllLeagues = async function (req, res) {
     try {
         const leagues = await League.find({});
-        res.status(200).send(leagues);
-    }
-    catch (e) {
-        res.status(500).send({ message: 'An error occured' })
-    } try {
-        const leagues = await League.find({});
         res.status(200).json(leagues);
     } catch (err) {
         res.status(500).send({ message: 'An error has occured while getting all Leagues' });
@@ -52,11 +46,12 @@ exports.modifyManagersForLeague = async function (req, res) {
     const { managersToAdd, managersToRemove } = req.body;
     try {
         const updateObj = {};
+
         if (managersToAdd) {
-            updateObj.$addToSet = isArray(managersToAdd) ? { managers: { $each: managersToAdd } } : { managers: managersToAdd };
+            updateObj.$addToSet = Array.isArray(managersToAdd) ? { managers: { $each: managersToAdd } } : { managers: managersToAdd };
         }
         if (managersToRemove) {
-            updateObj.$pull = isArray(managersToRemove) ? { managers: { $each: managersToRemove } } : { managers: managersToRemove };
+            updateObj.$pull = Array.isArray(managersToRemove) ? { managers: { $in: managersToRemove } } : { managers: managersToRemove };
         }
 
         if (managersToRemove || managersToAdd) {
@@ -69,11 +64,11 @@ exports.modifyManagersForLeague = async function (req, res) {
             }
         }
         else {
-            res.status(400).send({ message: 'No valid fields provided for update.' });
+            res.status(400).send({ message: "No fields provided for update" });
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'Error occured while modify managers' });
+        res.status(500).send({ message: 'Error occured while modifying managers' });
     }
 };
 
@@ -95,10 +90,10 @@ exports.modifyLeagueTeams = async function (req, res) {
     try {
         const updateObj = {}
         if (teamsToAdd) {
-            updateObj.$addToSet = isArray(teamsToAdd) ? { teams: { $each: teamsToAdd } } : { teams: teamsToAdd };
+            updateObj.$addToSet = Array.isArray(teamsToAdd) ? { teams: { $each: teamsToAdd } } : { teams: teamsToAdd };
         }
         if (teamsToRemove) {
-            updateObj.$pull = isArray(teamsToRemove) ? { teams: { $each: teamsToRemove } } : { teams: teamsToRemove };
+            updateObj.$pull = Array.isArray(teamsToRemove) ? { teams: { $in: teamsToRemove } } : { teams: teamsToRemove };
         }
 
         if (Object.keys(updateObj).length > 0) {
