@@ -97,7 +97,7 @@ exports.modifyLeagueTeams = async function (req, res) {
         }
 
         if (Object.keys(updateObj).length > 0) {
-            const updatedLeague = await League.findByIdAndUpdate(req.body._id, updateObj, { new: true });
+            const updatedLeague = await League.findByIdAndUpdate(req.params._id, updateObj, { new: true });
             if (!updatedLeague) {
                 return res.status(404).send({ message: 'League not found.' });
             }

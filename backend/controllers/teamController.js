@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
-const Team = require('../models/Team');
 Team = mongoose.model('Team');
 
 /** /team */
 //GET get all teams
 exports.getAllTeams = async function (req, res) {
     try {
-        const teams = Team.find({});
+        const teams = await Team.find({});
         res.status(200).send(teams);
     }
     catch (e) {
@@ -134,19 +133,20 @@ exports.modifyLeagues = async function (req, res) {
     try {
         const updateObj = {}
         if (leaguesToJoin) {
-            updateObj.$addToSet = isArray(leaguesToJoin) ? { leagues: { $each: leaguesToJoin } } : { leagues: updateObj };
+            updateObj.$addToSet = Array.isArray(leaguesToJoin) ? { leagues: { $each: leaguesToJoin } } : { leagues: updateObj };
         }
         if (leaguesToLeave) {
-            updateObj.$pull = isArray(leaguesToLeave) ? { leagues: { $in: leaguesToLeave } } : { leagues: leaguesToJoin };
+            updateObj.$pull = Array.isArray(leaguesToLeave) ? { leagues: { $in: leaguesToLeave } } : { leagues: leaguesToJoin };
         }
 
         if (leaguesToJoin || leaguesToLeave) {
+            //error here
             const team = await Team.findByIdAndUpdate(req.params._id, updateObj, { new: true });
             if (!team) {
                 res.status(404).send({ message: 'Team not found' });
             }
             else {
-                res.status(200).send(team)
+                res.status(200).send(team);
             }
         }
         else {

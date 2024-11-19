@@ -10,6 +10,6 @@ router.route("/:_id/games").get(controller.getGames).patch(controller.modifyGame
 
 router.route("/:_id/leagues").get(controller.getLeagues).patch(controller.modifyLeagues);
 
-router.route("/:id/changeName").patch(controller.modifyName);
+router.route("/:_id/changeName").patch(controller.modifyName);
 
 module.exports = router;
