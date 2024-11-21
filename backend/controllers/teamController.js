@@ -90,7 +90,7 @@ exports.modifyGames = async function (req, res) {
             updateObj.$addToSet = Array.isArray(gamesToAdd) ? { games: { $each: gamesToAdd } } : { games: gamesToAdd };
         }
         if (gamesToRemove) {
-            updateObj.$pull - Array.isArray(gamesToRemove) ? { games: { $in: gamesToRemove } } : { games: gamesToRemove };
+            updateObj.$pull = Array.isArray(gamesToRemove) ? { games: { $in: gamesToRemove } } : { games: gamesToRemove };
         }
 
         if (gamesToRemove || gamesToAdd) {
@@ -133,14 +133,13 @@ exports.modifyLeagues = async function (req, res) {
     try {
         const updateObj = {}
         if (leaguesToJoin) {
-            updateObj.$addToSet = Array.isArray(leaguesToJoin) ? { leagues: { $each: leaguesToJoin } } : { leagues: updateObj };
+            updateObj.$addToSet = Array.isArray(leaguesToJoin) ? { leagues: { $each: leaguesToJoin } } : { leagues: leaguesToJoin };
         }
         if (leaguesToLeave) {
-            updateObj.$pull = Array.isArray(leaguesToLeave) ? { leagues: { $in: leaguesToLeave } } : { leagues: leaguesToJoin };
+            updateObj.$pull = Array.isArray(leaguesToLeave) ? { leagues: { $in: leaguesToLeave } } : { leagues: leaguesToLeave };
         }
 
         if (leaguesToJoin || leaguesToLeave) {
-            //error here
             const team = await Team.findByIdAndUpdate(req.params._id, updateObj, { new: true });
             if (!team) {
                 res.status(404).send({ message: 'Team not found' });
