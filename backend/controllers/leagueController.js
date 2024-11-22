@@ -32,7 +32,7 @@ exports.getLeague = async function (req, res) {
         if (league) {
             res.status(200).json(league);
         } else {
-            res.status(404).send({ message: 'Leaguenot found.' });
+            res.status(404).send({ message: 'League not found.' });
         }
     } catch (err) {
         res.status(500).send({ message: 'An error occurred retrieving League.' });
@@ -126,7 +126,7 @@ exports.deleteManagerFromLeague = async function (req, res) {
     }
 } // Test PASSED
 
-/** /leagues/:_id/teams*/
+/** /leagues/:_id/teams */
 // GET Get all teams
 exports.getLeagueTeams = async function (req, res) {
     try {
@@ -148,7 +148,7 @@ exports.addTeamToLeague = async function (req, res) {
 
         if(!league) return res.status(404).json({ message: 'League not found.' });
 
-        if(!league.managers) return res.status(404).json({ message: 'League\'s team not found.' });
+        if(!league.teams) return res.status(404).json({ message: 'League\'s team not found.' });
 
 
         const teams = league.teams.filter(item => item.toString() === teamId);
@@ -212,58 +212,116 @@ exports.deleteTeamFromLeague = async function (req, res) {
 // GET Get all seasons
 exports.getLeagueSeasons = async function (req, res) {
     try {
-        const seasons = await League.findById(req.params._id, { seasons: 1 });
-        if (seasons) {
-            res.status(200).send(seasons)
-        }
-        else {
-            res.status(404).send({ message: 'League not found' })
-        }
+        const league = await League.findById(req.params._id);
+        if (!league) return res.status(404).send({ message: 'League not found' });
+
+        if(!league.seasons) return res.status(404).send({ message: 'Seasons not found' });
+
+        res.status(200).send(league.seasons)
     }
     catch (e) {
         res.status(500).send({ message: 'An error has occurred' })
     }
-}
+}  // Test Passed
 
 
-// PATCH Add or remove seasons
-// seasonToDelete is the unique identifier for season
-exports.modifySeasonsForLeague = async function (req, res) {
-    const { seasonToAdd, seasonToDelete } = req.body;
+// POST Add season to seasons
+exports.addSeasonToSeasons = async function (req, res) {
+    const leagueId = req.params._id;
+
     try {
-        const updateObj = {};
-        if (seasonToAdd) {
-            updateObj.$addToSet = { seasons: seasonToAdd };
-        }
-        if (seasonToDelete) {
-            // const seasonToDeleteID = await League.find({ _id: req.params._id }).where('seasons.uniqueIdentifier').equals(seasonToDelete);
-            // if (!seasonToDeleteID) {
-            //     res.status(404).send({ message: "Season to delete does not exist" });
-            // }
-            updateObj.$pull = { seasons: { uniqueIdentifier: seasonToDelete } }
-            // updateObj.$pull = { seasons: seasonToDeleteID }
+        const league = await League.findById(leagueId);
+
+        if (!league) return res.status(404).json({ message: 'League not found.' });
+
+        if (!req.body.start_date || !req.body.end_date) {
+            return res.status(400).json({ message: 'Invalid form fields.' });
         }
 
-        if (seasonToAdd || seasonToDelete) {
-            const seasons = await League.findByIdAndUpdate(req.params._id, updateObj, { new: true });
-            if (seasons) {
-                res.status(200).send(seasons);
+        const newStartDate = new Date(req.body.start_date);
+        const newEndDate = new Date(req.body.end_date);
+
+        if(league.seasons && league.seasons.length > 0) {
+            const seasonOverlap = league.seasons.some(season => {
+                const existingStartDate = new Date(season.start_date);
+                const existingEndDate = new Date(season.end_date);
+    
+                return (
+                    (newStartDate >= existingStartDate && newStartDate <= existingEndDate) ||  
+                    (newEndDate >= existingStartDate && newEndDate <= existingEndDate) ||      
+                    (newStartDate <= existingStartDate && newEndDate >= existingEndDate)      
+                );
+            });
+
+            if (seasonOverlap) {
+                return res.status(400).json({ message: 'The new season dates overlap with an existing season.' });
             }
-            else {
-                res.status(404).send({ message: 'League not found' });
-            }
         }
-        else {
-            res.status(400).send({ message: 'No fields provided for update' });
+
+        const result = await League.updateOne(
+            { _id: leagueId },
+            { $push: { seasons : {
+                start_date: newStartDate,
+                end_date: newEndDate,
+            }} }
+        );
+
+        if (result) {
+            return res.status(200).json(result); 
+        } else {
+           return res.status(400).json({ message: 'No changes made to the league\'s teams.' });
+        } 
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+} // Test PASSED
+
+// DELETE Delete season from seasons
+exports.deleteSeasonFromSeasons = async function (req, res) {
+    const leagueId = req.params._id;
+    const seasonId = req.body.seasonId;
+
+    try {
+        const league = await League.findById(leagueId);
+
+        if(!league) return res.status(404).json({ message: 'League not found.' });
+
+        if(!league.seasons) return res.status(404).json({ message: 'League\'s seasons not found.' });
+
+
+        const seasons = league.seasons.filter(item => item._id.toString() === seasonId);
+        
+        if(!seasons.length > 0) {
+            return res.status(400).json({ message: 'Season does not exist in league.' });
         }
-    }
-    catch (e) {
-        res.status(500).send({ message: 'An error occured while attempting to modify seasons' });
-    }
-}
 
-//Update season
+        const result = await League.updateOne(
+            { _id: leagueId },
+            { $pull: { seasons: { _id: seasonId } } }
+        );
 
+        if (result) {
+            return res.status(200).json(result); 
+        } else {
+           return res.status(400).json({ message: 'No changes made to the league\'s seasons.' });
+        } 
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+} // Test PASSED
+
+/** /leagues/:_id/seasons/:_sid */
+// GET Get season by sid
+
+// POST Add games to season
+
+// DELETE Delete game from season
+
+/** /:sport */
+// :sport is the enum 
+// GET Get leagues by sport
 exports.getLeaguesBySport = async function (req, res) {
     try {
         const leagues = await League.find({ sport: req.params.sport });
@@ -277,9 +335,8 @@ exports.getLeaguesBySport = async function (req, res) {
     catch (e) {
         res.status(500).send({ message: 'An error occurred' });
     }
-}
+} // Not tested
 
-/**  */
 //GET specific season
 exports.getLeagueSeason = async function (req, res) {
     try {
@@ -288,4 +345,4 @@ exports.getLeagueSeason = async function (req, res) {
     catch (e) {
         res.status(500).send({ message: 'An error has occurred' });
     }
-}
+} // Not tested
