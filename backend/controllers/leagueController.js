@@ -22,55 +22,109 @@ exports.getAllLeagues = async function (req, res) {
     } catch (err) {
         res.status(500).send({ message: 'An error has occurred while getting all Leagues' });
     }
-}
+} // Test Passed
 
-/** /leagues/:_id/managers */
+/** /league/:_id */
+// GET league by id
+exports.getLeague = async function (req, res) {
+    try {
+        const league = await League.findById(req.params._id);
+        if (league) {
+            res.status(200).json(league);
+        } else {
+            res.status(404).send({ message: 'Leaguenot found.' });
+        }
+    } catch (err) {
+        res.status(500).send({ message: 'An error occurred retrieving League.' });
+    }
+}; // Test Passed
+
+/** /league/:_id/managers */
 // GET Get all managers
 exports.getLeagueManagers = async function (req, res) {
     try {
-        const managers = await League.findById(req.params._id, { managers: 1 }).populate('managers')
-        if (!managers) {
+        const league = await League.findById(req.params._id).populate('managers')
+        if (!league) {
             res.status(404).send({ message: 'League not found' });
         }
         else {
-            res.status(200).send({ managers });
+            res.status(200).send(league.managers);
         }
     }
     catch (e) {
         res.status(500).send({ message: 'An error occurred' });
     }
-}
+} // Test Passed
 
-// PATCH Add or remove managers
-exports.modifyManagersForLeague = async function (req, res) {
-    const { managersToAdd, managersToRemove } = req.body;
+// POST Add managers to league
+exports.addManagerToLeague = async function (req, res) {
+    const leagueId = req.params._id;
+    const managerId = req.body.managerId;
+  
     try {
-        const updateObj = {};
+        const league = await League.findById(leagueId);
 
-        if (managersToAdd) {
-            updateObj.$addToSet = Array.isArray(managersToAdd) ? { managers: { $each: managersToAdd } } : { managers: managersToAdd };
-        }
-        if (managersToRemove) {
-            updateObj.$pull = Array.isArray(managersToRemove) ? { managers: { $in: managersToRemove } } : { managers: managersToRemove };
+        if(!league) return res.status(404).json({ message: 'League not found.' });
+
+        if(!league.managers) return res.status(404).json({ message: 'League\'s managers not found.' });
+
+
+        const managers = league.managers.filter(item => item.toString() === managerId);
+
+        if(managers.length > 0) {
+            return res.status(400).json({ message: 'Manager exists in league.' });
         }
 
-        if (managersToRemove || managersToAdd) {
-            const managers = await League.findByIdAndUpdate(req.params._id, updateObj, { new: true });
-            if (managers) {
-                res.status(200).send(managers);
-            }
-            else {
-                res.status(404).send({ message: 'League not found' });
-            }
-        }
-        else {
-            res.status(400).send({ message: "No fields provided for update" });
-        }
+        const result = await League.updateOne(
+            { _id: leagueId },
+            { $push: { managers: managerId } }
+        );
+
+        if (result) {
+            return res.status(200).json(result); 
+        } else {
+           return res.status(400).json({ message: 'No changes made to the league\'s managers.' });
+        } 
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
-    catch (e) {
-        res.status(500).send({ message: 'Error occurred while modifying managers' });
+} // Test Passed
+
+// DELETE Delete manager from league
+exports.deleteManagerFromLeague = async function (req, res) {
+    const leagueId = req.params._id;
+    const managerId = req.body.managerId;
+  
+    try {
+        const league = await League.findById(leagueId);
+
+        if(!league) return res.status(404).json({ message: 'League not found.' });
+
+        if(!league.managers) return res.status(404).json({ message: 'League\'s managers not found.' });
+
+
+        const managers = league.managers.filter(item => item.toString() === managerId);
+
+        if(!managers.length > 0) {
+            return res.status(400).json({ message: 'Manager does not exist in league.' });
+        }
+
+        const result = await League.updateOne(
+            { _id: leagueId },
+            { $pull: { managers: managerId } }
+        );
+
+        if (result) {
+            return res.status(200).json(result); 
+        } else {
+           return res.status(400).json({ message: 'No changes made to the league\'s managers.' });
+        } 
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
-};
+} // Test PASSED
 
 /** /leagues/:_id/teams*/
 // GET Get all teams
