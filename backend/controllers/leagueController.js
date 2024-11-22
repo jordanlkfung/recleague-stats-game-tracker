@@ -10,7 +10,7 @@ exports.addLeague = async function (req, res) {
         const savedLeague = await newLeague.save();
         res.status(201).json(savedLeague);
     } catch (err) {
-        res.status(500).send({ message: err });
+        res.status(500).send({ message: 'An error occurred' });
     }
 } // League name and sport enums tests PASSED
 
@@ -20,7 +20,7 @@ exports.getAllLeagues = async function (req, res) {
         const leagues = await League.find({});
         res.status(200).json(leagues);
     } catch (err) {
-        res.status(500).send({ message: 'An error has occured while getting all Leagues' });
+        res.status(500).send({ message: 'An error has occurred while getting all Leagues' });
     }
 }
 
@@ -37,7 +37,7 @@ exports.getLeagueManagers = async function (req, res) {
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'An error occured' });
+        res.status(500).send({ message: 'An error occurred' });
     }
 }
 
@@ -68,7 +68,7 @@ exports.modifyManagersForLeague = async function (req, res) {
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'Error occured while modifying managers' });
+        res.status(500).send({ message: 'Error occurred while modifying managers' });
     }
 };
 
@@ -80,7 +80,7 @@ exports.getLeagueTeams = async function (req, res) {
         res.status(200).send(teams);
     }
     catch (e) {
-        res.status(500).send({ message: 'An error occured' });
+        res.status(500).send({ message: 'An error occurred' });
     }
 }
 
@@ -109,7 +109,7 @@ exports.modifyLeagueTeams = async function (req, res) {
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'An error occured' })
+        res.status(500).send({ message: 'An error occurred' })
     }
 }
 
@@ -117,7 +117,7 @@ exports.modifyLeagueTeams = async function (req, res) {
 // GET Get all seasons
 exports.getLeagueSeasons = async function (req, res) {
     try {
-        const seasons = League.findById(req.params._id, { seasons: 1 });
+        const seasons = await League.findById(req.params._id, { seasons: 1 });
         if (seasons) {
             res.status(200).send(seasons)
         }
@@ -126,12 +126,13 @@ exports.getLeagueSeasons = async function (req, res) {
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'An error has occured' })
+        res.status(500).send({ message: 'An error has occurred' })
     }
 }
 
 
 // PATCH Add or remove seasons
+// seasonToDelete is the unique identifier for season
 exports.modifySeasonsForLeague = async function (req, res) {
     const { seasonToAdd, seasonToDelete } = req.body;
     try {
@@ -140,8 +141,14 @@ exports.modifySeasonsForLeague = async function (req, res) {
             updateObj.$addToSet = { seasons: seasonToAdd };
         }
         if (seasonToDelete) {
-            updateObj.$pull = { seasons: seasonToDelete };
+            // const seasonToDeleteID = await League.find({ _id: req.params._id }).where('seasons.uniqueIdentifier').equals(seasonToDelete);
+            // if (!seasonToDeleteID) {
+            //     res.status(404).send({ message: "Season to delete does not exist" });
+            // }
+            updateObj.$pull = { seasons: { uniqueIdentifier: seasonToDelete } }
+            // updateObj.$pull = { seasons: seasonToDeleteID }
         }
+
         if (seasonToAdd || seasonToDelete) {
             const seasons = await League.findByIdAndUpdate(req.params._id, updateObj, { new: true });
             if (seasons) {
@@ -160,9 +167,11 @@ exports.modifySeasonsForLeague = async function (req, res) {
     }
 }
 
+//Update season
+
 exports.getLeaguesBySport = async function (req, res) {
     try {
-        const leagues = await League.find({ 'sport': req.params.sport });
+        const leagues = await League.find({ sport: req.params.sport });
         if (!leagues) {
             res.status(404).send({ message: 'No leagues with entered sport were found' });
         }
@@ -171,6 +180,17 @@ exports.getLeaguesBySport = async function (req, res) {
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'An error occured' });
+        res.status(500).send({ message: 'An error occurred' });
+    }
+}
+
+/**  */
+//GET specific season
+exports.getLeagueSeason = async function (req, res) {
+    try {
+        const season = await League.find({ seasons: { $elemMatch: { uniqueIdentifier: req.params.seasonID } } }, { seasons: 1 });
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error has occurred' });
     }
 }

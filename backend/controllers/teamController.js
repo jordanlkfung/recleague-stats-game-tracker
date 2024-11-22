@@ -107,7 +107,7 @@ exports.modifyGames = async function (req, res) {
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'An error occured' });
+        res.status(500).send({ message: 'An error occurred' });
     }
 }
 
@@ -124,7 +124,7 @@ exports.getLeagues = async function (req, res) {
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'An error occured' });
+        res.status(500).send({ message: 'An error occurred' });
     }
 }
 // PATCH join or leave leagues
@@ -153,14 +153,14 @@ exports.modifyLeagues = async function (req, res) {
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'An error has occured' });
+        res.status(500).send({ message: 'An error has occurred' });
     }
 }
 
 /** /team/:_id/changeName */
 //PATCH
 exports.modifyName = async function (req, res) {
-    //ADD CHECK TO SEE IF NEW NAME FITS?
+    //]ADD CHECK TO SEE IF NEW NAME FITS?
     try {
         const updatedName = await Team.findByIdAndUpdate(req.params._id, { $set: { name: req.body.name } }, { new: true });
         if (updatedName)
@@ -169,6 +169,22 @@ exports.modifyName = async function (req, res) {
             res.status(404).send({ message: 'Team not found' });
     }
     catch (e) {
-        res.status(500).send({ message: 'An error has occured' });
+        res.status(500).send({ message: 'An error has occurred' });
+    }
+}
+
+/** /team/:_id/recentGames */
+//GET recent games
+/**
+ * number of games passed from query params
+ * if number of games requested > number of games return all games
+ */
+exports.getGamesBeforeDate = async function (req, res) {
+    const offset = req.query.offset || 10;
+    try {
+        const games = await Team.find({ '_id': req.params._id, games: { $lt: ISODate(req.query.date) } }).limit(req.query.limit).select({ games: 1 });
+    }
+    catch (e) {
+
     }
 }
