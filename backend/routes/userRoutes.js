@@ -11,6 +11,7 @@ router.route("/:_id")
 
 router.route("/:_id/leagues")
     .get(controller.getUserLeagues)
-    .patch(controller.modifyLeaguesForUser);
+    .post(controller.addLeagueToUser)
+    .delete(controller.deleteLeagueFromUser);
 
 module.exports = router;

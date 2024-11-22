@@ -23,15 +23,9 @@ const userSchema = new mongoose.Schema({
     },
     leagues: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'League'
+        ref: 'League',
     }],
 });
-
-// Custom validation for unique leagues in the leagues array
-userSchema.path('leagues').validate(function(value) {
-    // Use a Set to ensure all leagues are unique
-    return value.length === new Set(value.map(league => league.toString())).size;
-}, 'Leagues must be unique.');
 
 userSchema.pre('save', async function (next) {
     if (this.isModified('email') || this.isNew) {
