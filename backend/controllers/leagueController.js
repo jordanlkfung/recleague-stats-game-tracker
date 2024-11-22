@@ -130,42 +130,83 @@ exports.deleteManagerFromLeague = async function (req, res) {
 // GET Get all teams
 exports.getLeagueTeams = async function (req, res) {
     try {
-        const teams = await League.findById(req.params._id, { teams: 1 }).populate('teams');
-        res.status(200).send(teams);
+        const league = await League.findById(req.params._id).populate('teams');
+        res.status(200).send(league.teams);
     }
     catch (e) {
         res.status(500).send({ message: 'An error occurred' });
     }
-}
+} // Test PASSED
 
-// PATCH Add or remove teams
-exports.modifyLeagueTeams = async function (req, res) {
-    const { teamsToAdd, teamsToRemove } = req.body;
+// POST Add team to league
+exports.addTeamToLeague = async function (req, res) {
+    const leagueId = req.params._id;
+    const teamId = req.body.teamId;
+
     try {
-        const updateObj = {}
-        if (teamsToAdd) {
-            updateObj.$addToSet = Array.isArray(teamsToAdd) ? { teams: { $each: teamsToAdd } } : { teams: teamsToAdd };
-        }
-        if (teamsToRemove) {
-            updateObj.$pull = Array.isArray(teamsToRemove) ? { teams: { $in: teamsToRemove } } : { teams: teamsToRemove };
+        const league = await League.findById(leagueId);
+
+        if(!league) return res.status(404).json({ message: 'League not found.' });
+
+        if(!league.managers) return res.status(404).json({ message: 'League\'s team not found.' });
+
+
+        const teams = league.teams.filter(item => item.toString() === teamId);
+
+        if(teams.length > 0) {
+            return res.status(400).json({ message: 'Team exists in league.' });
         }
 
-        if (Object.keys(updateObj).length > 0) {
-            const updatedLeague = await League.findByIdAndUpdate(req.params._id, updateObj, { new: true });
-            if (!updatedLeague) {
-                return res.status(404).send({ message: 'League not found.' });
-            }
+        const result = await League.updateOne(
+            { _id: leagueId },
+            { $push: { teams: teamId } }
+        );
 
-            res.status(201).send(updatedLeague);
-        }
-        else {
-            res.status(400).send({ message: 'No valid fields provided for update.' });
-        }
+        if (result) {
+            return res.status(200).json(result); 
+        } else {
+           return res.status(400).json({ message: 'No changes made to the league\'s teams.' });
+        } 
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
-    catch (e) {
-        res.status(500).send({ message: 'An error occurred' })
+} // Not tested
+
+// DELETE Delete team from league
+exports.deleteTeamFromLeague = async function (req, res) {
+    const leagueId = req.params._id;
+    const teamId = req.body.teamId;
+
+    try {
+        const league = await League.findById(leagueId);
+
+        if(!league) return res.status(404).json({ message: 'League not found.' });
+
+        if(!league.teams) return res.status(404).json({ message: 'League\'s team not found.' });
+
+
+        const teams= league.teams.filter(item => item.toString() === teamId);
+
+        if(!teams.length > 0) {
+            return res.status(400).json({ message: 'Team does not exist in league.' });
+        }
+
+        const result = await League.updateOne(
+            { _id: leagueId },
+            { $pull: { teams: teamId } }
+        );
+
+        if (result) {
+            return res.status(200).json(result); 
+        } else {
+           return res.status(400).json({ message: 'No changes made to the league\'s teams.' });
+        } 
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
-}
+} // Not tested
 
 /** /leagues/:_id/seasons */
 // GET Get all seasons

@@ -16,7 +16,8 @@ router.route("/:_id/managers")
 
 router.route("/:_id/teams")
     .get(controller.getLeagueTeams)
-    .patch(controller.modifyLeagueTeams);
+    .post(controller.addTeamToLeague)
+    .delete(controller.deleteTeamFromLeague);
 
 router.route("/:_id/seasons")
     .get(controller.getLeagueSeasons)
