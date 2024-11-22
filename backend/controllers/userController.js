@@ -52,12 +52,15 @@ exports.getUserLeagues = async function (req, res) {
             return res.status(404).send({ message: 'User not found.' }); // Can populate leagues array with the League objects instead of ids
         }
 
+        if (user.leagues.length > 0) {
+            await user.populate('leagues');
+        }
+
         res.status(200).json(user.leagues);
     } catch (err) {
         console.error(err);
         res.status(500).send({ message: 'An error occurred while retrieving the user leagues.' });
     }
-
 }; // Test Passed
 
 // POST 

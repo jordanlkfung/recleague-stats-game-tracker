@@ -6,9 +6,13 @@ router.route("")
     .post(controller.addLeague)
     .get(controller.getAllLeagues);
 
+router.route("/:_id")
+    .get(controller.getLeague);
+
 router.route("/:_id/managers")
     .get(controller.getLeagueManagers)
-    .patch(controller.modifyManagersForLeague);
+    .post(controller.addManagerToLeague)
+    .delete(controller.deleteManagerFromLeague);
 
 router.route("/:_id/teams")
     .get(controller.getLeagueTeams)
