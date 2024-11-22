@@ -314,10 +314,37 @@ exports.deleteSeasonFromSeasons = async function (req, res) {
 
 /** /leagues/:_id/seasons/:_sid */
 // GET Get season by sid
+exports.getSeason = async function (req, res) {
+    const leagueId = req.params._id;
+    const seasonId = req.params._sid;
+
+    try {
+        const league = await League.findById(
+            { _id: leagueId }
+        );
+
+        if (!league) return res.status(404).send({ message: 'League not found.' });
+
+        const season = league.seasons.find(s => s._id.toString() === seasonId);
+
+        if (!season) return res.status(404).send({ message: 'Season not found.' });
+
+        res.status(200).json(season); 
+    } catch (err) {
+        console.log(err);
+        res.status(500).send({ message: 'An error occurred retrieving League.' });
+    }
+}; // Test Passed
 
 // POST Add games to season
+exports.addGameToSeason = async function (req, res) {
+
+}
 
 // DELETE Delete game from season
+exports.deleteGameFromSeason = async function (req, res) {
+    
+}
 
 /** /:sport */
 // :sport is the enum 

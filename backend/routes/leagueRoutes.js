@@ -24,6 +24,9 @@ router.route("/:_id/seasons")
     .post(controller.addSeasonToSeasons)
     .delete(controller.deleteSeasonFromSeasons);
 
+router.route("/:_id/season/:_sid")
+    .get(controller.getSeason);
+
 router.route("/:sport").get(controller.getLeaguesBySport)
 
 module.exports = router;
