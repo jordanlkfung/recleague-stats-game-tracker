@@ -1,6 +1,5 @@
 var mongoose = require('mongoose');
 User = mongoose.model('User');
-const { ObjectId } = mongoose.Types;
 
 // req.params._id is the ObjectID of the User Document
 // Updating leagues needs the League's ObjectID in the request body (leagueId)
@@ -69,14 +68,14 @@ exports.addLeagueToUser = async (req, res) => {
     try {
         const user = await User.findById(userId);
 
-        if(!user) res.status(404).json({ message: 'User not found.' });
+        if(!user) return res.status(404).json({ message: 'User not found.' });
 
-        if(!user.leagues) res.status(404).json({ message: 'User\'s leagues not found.' });
+        if(!user.leagues) return res.status(404).json({ message: 'User\'s leagues not found.' });
 
         const leagues = user.leagues.filter(item => item.toString() === leagueId);
 
         if(leagues.length > 0) {
-            res.status(400).json({ message: 'League exists for the user.' });
+            return res.status(400).json({ message: 'League exists for the user.' });
         }
 
         const result = await User.updateOne(
@@ -84,10 +83,10 @@ exports.addLeagueToUser = async (req, res) => {
             { $push: { leagues: leagueId } }
         );
 
-       if (result) {
-            res.status(200).json(result); 
+        if (result) {
+            return res.status(200).json(result); 
         } else {
-            res.status(400).json({ message: 'No changes made to the user\'s leagues.' });
+            return res.status(400).json({ message: 'No changes made to the user\'s leagues.' });
         } 
     } catch (err) {
         console.error(err);
@@ -103,21 +102,25 @@ exports.deleteLeagueFromUser = async (req, res) => {
     try {
         const user = await User.findById(userId);
 
-        if(!user) res.status(404).json({ message: 'User not found.' });
+        if(!user) return res.status(404).json({ message: 'User not found.' });
 
-        if(!user.leagues) res.status(404).json({ message: 'User\'s leagues not found.' });
+        if(!user.leagues) return res.status(404).json({ message: 'User\'s leagues not found.' });
 
-        user.leagues = user.leagues.filter(item => item.toString() !== leagueId);
+        const leagues = user.leagues.filter(item => item.toString() === leagueId);
+
+        if(!leagues.length > 0) {
+            return res.status(400).json({ message: 'League does not exist for the user.' });
+        }
 
         const result = await User.updateOne(
             { _id: userId },
             { $pull: { leagues: leagueId } }
         );
 
-       if (result) {
-            res.status(200).json(result); 
+        if (result) {
+            return res.status(200).json(result); 
         } else {
-            res.status(400).json({ message: 'No changes made to the user\'s leagues.' });
+            return res.status(400).json({ message: 'No changes made to the user\'s leagues.' });
         }
     } catch (err) {
         console.error(err);
