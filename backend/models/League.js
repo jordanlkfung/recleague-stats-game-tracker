@@ -31,14 +31,6 @@ const leagueSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Game'
         }],
-        uniqueIdentifier: {
-            type: String,
-            unique: true
-        },
-        complete: {
-            type: Boolean,
-            required: [true, 'Completed season is required.'],
-        },
     }],
     managers: [{
         type: mongoose.Schema.Types.ObjectId,

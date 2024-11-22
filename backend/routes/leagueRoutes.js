@@ -21,7 +21,8 @@ router.route("/:_id/teams")
 
 router.route("/:_id/seasons")
     .get(controller.getLeagueSeasons)
-    .patch(controller.modifySeasonsForLeague);
+    .post(controller.addSeasonToSeasons)
+    .delete(controller.deleteSeasonFromSeasons);
 
 router.route("/:sport").get(controller.getLeaguesBySport)
 
