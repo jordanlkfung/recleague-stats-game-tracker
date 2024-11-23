@@ -6,15 +6,6 @@ const teamSchema = new mongoose.Schema({
         required: [true, 'Team name/mascot is required.'],
         match: [/^[A-Za-z\s]{3,30}$/, 'Team name must be between 3 and 30 characters long and can only include letters and spaces.'],
     },
-    sport: {
-        type: String,
-        required: [true, 'Sport category is required.'],
-        enum: ['Baseball', 'Basketball', 'Football', 'Soccer', 'Volleyball'], // Drop-down menu selection
-    },
-    leagues: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'League',
-    }],
     roster: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Player',

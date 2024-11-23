@@ -46,6 +46,10 @@ Team = require('./models/Team.js');
 var teamRoute = require('./routes/teamRoutes.js');
 app.use('/team', teamRoute);
 
+Game = require('./models/Game.js');
+var teamRoute = require('./routes/gameRoutes.js');
+app.use('/game', teamRoute);
+
 app.all('*', (req, res) => {
     res.status(404);
     if (req.accepts('html')) {

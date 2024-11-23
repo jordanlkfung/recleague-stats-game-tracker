@@ -1,50 +1,30 @@
 const mongoose = require('mongoose');
-const Basketball = require('../models/sports/Basketball');
 Game = mongoose.model('Game');
-
+const Basketball = require('../models/sports/Basketball');
 
 exports.newGame = async function (req, res) {
-    //TODO: CHECK FOR SPORT AND MAKE MODEL BASED ON THAT
-    const { sport, date, time, teams } = req.body;
-    const sports = ['Football', 'Soccer', 'Baseball', 'Volleyball', 'Basketball'];
+    const sport = req.body.sport;
+    var game;
+    if (sport === 'Basketball')
+        game = new Basketball(req.body)
+    else
+        return res.status(404).send({ message: "Game does not exist" });
     try {
-        if (sport) {
-            var newGame;
-            if (sport === 'Basketball') {
-                newGame = new Basketball({
-                    sport: sport,
-                    date: date,
-                    time: time,
-                    teams: teams,
-                })
-            }
-            else if (sport === 'Football') {
-
-            }
-            else if (sport === 'Soccer') {
-
-            }
-            else if (sport === 'Baseball') {
-
-            }
-            else if (sport === 'Volleyball') {
-
-            }
-            else {
-
-            }
-            if (newGame) {
-                const savedGame = newGame.save();
-                res.status(201).send({ 'id': savedGame._id });
-            }
-            res.status(400).send({ message: 'Invalid sport provided' })
-        }
-        else {
-            res.status(400).send({ message: 'No sport provided' })
-        }
+        const newGame = await game.save();
+        if (newGame)
+            res.status(201).send(newGame);
     }
     catch (e) {
         res.status(500).send({ message: 'An error occurred' });
+    }
+}
+exports.getAllGames = async function (req, res) {
+    try {
+        const game = await Game.find({});
+        res.status(200).send(game);
+    }
+    catch (e) {
+        res.status(500).send({ message: "An error has occurred" });
     }
 }
 exports.getTeams = async function (req, res) {
@@ -97,6 +77,7 @@ exports.setResult = async function (req, res) {
 }
 
 exports.addAllBasketballGameStats = async function (req, res) {
+    const gameID = req.params._id;
     try {
         const newGame = await Basketball.findOneAndUpdate(req.params._id, req.body.stats, { new: true });
         if (!newGame) {
@@ -194,14 +175,5 @@ exports.addPlayerGameStats = async function (req, res) {
     }
     catch (e) {
         res.status(500).send({ message: "An error has occurred" })
-    }
-}
-
-function getSport(sport) {
-    switch (sport) {
-        case 'Baksetball':
-            return Basketball;
-        case 'Football':
-            return Football;
     }
 }

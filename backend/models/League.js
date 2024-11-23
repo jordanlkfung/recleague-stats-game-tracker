@@ -13,6 +13,10 @@ const leagueSchema = new mongoose.Schema({
         enum: ['Baseball', 'Basketball', 'Football', 'Soccer', 'Volleyball'], // Drop-down menu selection
     },
     seasons: [{
+        teams: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Team'
+        }],
         start_date: {
             type: Date,
             required: [true, 'Start date is required.'],
