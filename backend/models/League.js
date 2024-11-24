@@ -40,10 +40,6 @@ const leagueSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     }],
-    teams: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Team',
-    }],
 });
 
 // Custom validation for unique mangaers in the managers array
