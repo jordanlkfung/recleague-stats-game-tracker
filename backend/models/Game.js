@@ -40,12 +40,6 @@ const gameSchema = new mongoose.Schema({
             type: Boolean,
             required: [true, 'Tie has to be true or false.'],
             default: false,
-            validate: {
-                validator: function () {
-                    return (this.winner && this.loser) || (!this.winner && !this.loser === this.tie);
-                },
-                message: 'Tie must be true if both winner and loser are null, otherwise false.',
-            }
         }
     },
 });
