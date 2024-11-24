@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-Game = mongoose.model('Game');
 const Basketball = require('../models/sports/Basketball');
 const Game = require('../models/Game');
 

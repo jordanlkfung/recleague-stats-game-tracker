@@ -10,9 +10,9 @@ router.route("/:_id")
     .get(controller.getGame)
     .delete(controller.deleteGame);
 
-router.router("/:_id/modifyGame").
+router.route("/:_id/modifyGame").
     patch(controller.modifyGame);
 
-router.router("/:_id/changeTeam").
+router.route("/:_id/changeTeam").
     patch(controller.changeTeam);
 module.exports = router;

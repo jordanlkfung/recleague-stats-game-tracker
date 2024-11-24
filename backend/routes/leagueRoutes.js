@@ -7,28 +7,41 @@ router.route("")
     .get(controller.getAllLeagues);
 
 router.route("/:_id")
-    .get(controller.getLeague);
+    .get(controller.getLeagueByID)
+    .delete(controller.deleteLeague);
 
 router.route("/:_id/managers")
     .get(controller.getLeagueManagers)
     .post(controller.addManagerToLeague)
     .delete(controller.deleteManagerFromLeague);
 
-router.route("/:_id/teams")
-    .get(controller.getLeagueTeams)
-    .post(controller.addTeamToLeague)
-    .delete(controller.deleteTeamFromLeague);
+router.route("/sport/:sport")
+    .get(controller.getLeaguesBySport)
 
-router.route("/:_id/seasons")
+router.route("/:_id/season")
     .get(controller.getLeagueSeasons)
     .post(controller.addSeasonToSeasons)
     .delete(controller.deleteSeasonFromSeasons);
 
 router.route("/:_id/season/:_sid")
-    .get(controller.getSeason)
+    .get(controller.getSeasonByID);
+
+router.route("/:_id/season/:_sid/team")
+    .get(controller.getLeagueTeams)
+    .post(controller.addTeamToSeason)
+    .delete(controller.deleteTeamFromSeason);
+
+router.route("/:_id/season/:_sid/team/:_tid")
+    .get(controller.getTeamByID);
+
+router.route("/:_id/season/:_sid/team/:_tid/player")
+    .get(controller.getPlayers)
+    .post(controller.addPLayerToRoster);
+
+router.route("/:_id/season/:_sid/game")
+    .get(controller.getSeasonGames)
     .post(controller.addGameToSeason)
     .delete(controller.deleteGameFromSeason);
 
-router.route("/:sport").get(controller.getLeaguesBySport)
 
 module.exports = router;

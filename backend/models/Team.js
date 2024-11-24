@@ -16,18 +16,6 @@ const teamSchema = new mongoose.Schema({
     }],
 });
 
-// Custom validation for unique players in the roster array
-teamSchema.path('roster').validate(function (value) {
-    // Use a Set to ensure all players are unique
-    return value.length === new Set(value.map(player => player.toString())).size;
-}, 'Roster must contain unique players.');
-
-// Custom validation for unique games in the games array
-teamSchema.path('games').validate(function (value) {
-    // Use a Set to ensure all players are unique
-    return value.length === new Set(value.map(game => game.toString())).size;
-}, 'Games must contain unique games.');
-
 module.exports = mongoose.model('Team', teamSchema);
 
 /**
