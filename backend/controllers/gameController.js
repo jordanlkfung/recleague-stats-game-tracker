@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 Game = mongoose.model('Game');
 const Basketball = require('../models/sports/Basketball');
+const Game = require('../models/Game');
 
+/** /game */
+//POST
 exports.newGame = async function (req, res) {
     const sport = req.body.sport;
     var game;
@@ -18,6 +21,7 @@ exports.newGame = async function (req, res) {
         res.status(500).send({ message: 'An error occurred' });
     }
 }
+//GET
 exports.getAllGames = async function (req, res) {
     try {
         const game = await Game.find({});
@@ -27,15 +31,43 @@ exports.getAllGames = async function (req, res) {
         res.status(500).send({ message: "An error has occurred" });
     }
 }
-exports.getTeams = async function (req, res) {
+
+/** /game/:_id */
+
+//GET get game
+exports.getGame = async function (req, res) {
+    const gameID = req.params._id;
     try {
-        const teams = await Game.find({ _id: req.params._id }, { teams: 1 }).populate('teams');
-        res.status(200).json(teams);
+        const game = await Game.findById(gameID);
+        if (!game)
+            res.status(404).send({ message: "Game not found" });
+        else
+            res.status(200).send(game);
     }
     catch (e) {
-        res.status(500).send({ message: e })
+        res.status(500).send({ message: "An error has occurred" });
     }
 }
+
+//DELETE delete game
+exports.deleteGame = async function (req, res) {
+    const gameID = req.params._id;
+    try {
+        const game = await Game.findById(gameID);
+        if (!game)
+            return res.status(404).send({ message: "Game does not exist" });
+
+        const result = await Game.remove({ _id: gameID });
+        if (result)
+            res.status(200).send({ message: "Delete successful" });
+        else
+            res.status(404).send({ message: "An error has occurred" });
+    }
+    catch (e) {
+        res.status(500).send({ message: "An error has occurred" });
+    }
+}
+
 exports.setResult = async function (req, res) {
     //when there is a winning and losing team, team1 will be the winning team, team2 will be the losing team
     try {
@@ -76,21 +108,6 @@ exports.setResult = async function (req, res) {
     }
 }
 
-exports.addAllBasketballGameStats = async function (req, res) {
-    const gameID = req.params._id;
-    try {
-        const newGame = await Basketball.findOneAndUpdate(req.params._id, req.body.stats, { new: true });
-        if (!newGame) {
-            res.status(404).send({ message: 'Game was not found' });
-        }
-        res.status(200).send(newGame);
-    }
-    catch (e) {
-        res.status(500).send({ message: 'An error has occured' });
-    }
-}
-
-
 exports.updateGameStatsAndResults = async function (req, res) {
     try {
         const updatedGame = await Game.findOne({ '_id': req.params._id });
@@ -111,69 +128,65 @@ exports.updateGameStatsAndResults = async function (req, res) {
         res.status(500).send({ message: e })
     }
 }
-exports.getAllBasketballGameStats = async function (req, res) {
+
+
+/** /game/:_id/changeTeam */
+exports.changeTeam = async function (req, res) {
+    const { teamToRemove, teamToAdd } = req.body;
+    const gameID = req.params._id;
+
     try {
-        const gameStats = await Basketball.findOne({ '_id': req.params._id });
-        res.send(gameStats.stats);
+        const game = await Game.findById(gameID);
+
+        if (!game)
+            return res.status(404).send({ message: "Game not found" });
+
+        const teams = game.teams.filter(team => team.toString() === "teamToRemove");
+
+        if (!teams)
+            return res.status(404).send({ message: "Team to remove does not exist" });
+
+        const result = await Game.updateOne({ _id: gameID }, { $pull: teamToRemove, $push: teamToAdd });
+
+        if (result)
+            res.status(200).send(result);
+        else
+            res.status(400).send({ message: "No updates were made" });
     }
     catch (e) {
-        res.status(500).send({ message: e });
+        res.status(500).send({ message: "An error occurred" });
     }
 }
 
-exports.modifyGameTime = async function (req, res) {
+/** /team/:_id/modifyGame */
+exports.modifyGame = async function (req, res) {
+    const { newDate, newTime } = req.body;
+    const gameID = req.params._id;
+
     try {
-        const newGame = await Game.findByIdAndUpdate(req.params.__id, { $set: { time: req.body.newTime } }, { new: true });
-        if (!newGame) {
-            res.status(404).send({ message: 'Game not found' });
-        }
-        else {
-            res.status(200).send(newGame);
-        }
-    }
-    catch (e) {
-        res.status(500).send({ message: 'An error occured while attempting to change game time' });
-    }
-}
+        const game = await Game.findById(gameID);
 
-exports.modifyGameDate = async function (req, res) {
-    try {
+        if (!game)
+            return res.status(404).send({ message: "Game not found" });
 
-    }
-    catch (e) {
+        const updateObj = {};
 
-    }
-}
+        if (newDate)
+            updateObj.date = newDate;
+        if (newTime)
+            updateObj.time = newTime;
 
-
-/** /game/:_id/stats */
-//GET stats
-exports.getStats = async function (req, res) {
-    try {
-        let sport = await getSport(req.sport);
-        const gameStats = await sport.findById(req.params._id, { stats: 1 });
-        if (gameStats) {
-            res.status(200).send(gameStats);
+        if (newDate || newTime) {
+            const result = await Game.updateOne({ _id: gameID }, updateObj);
+            if (!result)
+                res.status(400).send({ message: "No updates were made" });
+            else
+                res.status(200).send(result)
         }
         else
-            res.status(404).send({ message: 'Game not found' });
+            res.status(400).send({ message: "No fields provided for update" });
     }
     catch (e) {
-
-    }
-}
-
-exports.addPlayerGameStats = async function (req, res) {
-    var sport = await getSport(req.body.sport)
-    try {
-        const updatedStats = await sport.findByIdAndUpdate(req.params._id, { $addToSet: { stats: req.body.stats } });
-        if (updatedStats) {
-            res.status(200).send(updatedStats);
-        }
-        else
-            res.status(404).send({ message: "Game not found" });
-    }
-    catch (e) {
-        res.status(500).send({ message: "An error has occurred" })
+        res.status(500).send({ message: "An error has occurred" });
     }
 }

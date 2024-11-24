@@ -40,28 +40,28 @@ const gameSchema = new mongoose.Schema({
             type: Boolean,
             required: [true, 'Tie has to be true or false.'],
             default: false,
-            // validate: {
-            //     validator: function () {
-            //         return (this.winner && this.loser) || (!this.winner && !this.loser === this.tie);
-            //     },
-            //     message: 'Tie must be true if both winner and loser are null, otherwise false.',
-            // }
+            validate: {
+                validator: function () {
+                    return (this.winner && this.loser) || (!this.winner && !this.loser === this.tie);
+                },
+                message: 'Tie must be true if both winner and loser are null, otherwise false.',
+            }
         }
     },
 });
 
 // Validation for two unique teams
-// gameSchema.path('teams').validate(function (value) {
-//     // Check if there are exactly two teams
-//     if (value.length !== 2) {
-//         throw new Error('Teams array must contain exactly two teams.');
-//     }
-//     // Check if the two teams are unique
-//     if (value[0].toString() === value[1].toString()) {
-//         throw new Error('The two teams must be unique.');
-//     }
-//     return true;
-// });
+gameSchema.path('teams').validate(function (value) {
+    // Check if there are exactly two teams
+    if (value.length !== 2) {
+        throw new Error('Teams array must contain exactly two teams.');
+    }
+    // Check if the two teams are unique
+    if (value[0].toString() === value[1].toString()) {
+        throw new Error('The two teams must be unique.');
+    }
+    return true;
+});
 
 module.exports = mongoose.model('Game', gameSchema);
 
