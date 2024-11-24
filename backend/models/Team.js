@@ -10,10 +10,6 @@ const teamSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Player',
     }],
-    games: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Game',
-    }],
 });
 
 module.exports = mongoose.model('Team', teamSchema);

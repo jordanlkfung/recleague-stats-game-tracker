@@ -211,7 +211,9 @@ exports.deleteManagerFromLeague = async function (req, res) {
 exports.getLeagueSeasons = async function (req, res) {
     try {
         const league = await League.findById(req.params._id);
+        
         if (!league) return res.status(404).send({ message: 'League not found' });
+
 
         if (!league.seasons) return res.status(404).send({ message: 'Seasons not found' });
 
@@ -281,22 +283,41 @@ exports.addSeasonToSeasons = async function (req, res) {
 } // Test PASSED
 
 // DELETE Delete season from seasons
+// DELETE Delete season from seasons
 exports.deleteSeasonFromSeasons = async function (req, res) {
     const leagueId = req.params._id;
     const seasonId = req.body.seasonId;
 
     try {
-        const league = await League.findById(leagueId);
-
+        const league = await League.findById(leagueId).populate('seasons.teams').exec();
         if (!league) return res.status(404).json({ message: 'League not found.' });
-
         if (!league.seasons) return res.status(404).json({ message: 'League\'s seasons not found.' });
 
+        const season = league.seasons.find(item => item._id.toString() === seasonId);
+        if (!season) return res.status(400).json({ message: 'Season does not exist in league.' });
 
-        const seasons = league.seasons.filter(item => item._id.toString() === seasonId);
+        if (season.teams && season.teams.length > 0) {
+            for (let i = 0; i < season.teams.length; i++) {
+                const team = season.teams[i];
 
-        if (!seasons.length > 0) {
-            return res.status(400).json({ message: 'Season does not exist in league.' });
+                if (team.roster && team.roster.length > 0) {
+                    for (let playerId of team.roster) {
+                        await Player.findByIdAndDelete(playerId); 
+                    }
+                }
+
+                await Team.findByIdAndDelete(team._id);
+            }
+        }
+
+        if (season.games && season.games.length > 0) {
+            for (let i = 0; i < season.games.length; i++) {
+                const game = season.games[i];
+                if (game) {
+                    await Game.findByIdAndDelete(game._id);
+                    console.log(game);
+                }
+            }
         }
 
         const result = await League.updateOne(
@@ -304,16 +325,17 @@ exports.deleteSeasonFromSeasons = async function (req, res) {
             { $pull: { seasons: { _id: seasonId } } }
         );
 
-        if (result) {
-            return res.status(200).json(result);
+        if (result.modifiedCount > 0) {
+            return res.status(200).json({ message: 'Season and associated data deleted successfully.' });
         } else {
-            return res.status(400).json({ message: 'No changes made to the league\'s seasons.' });
+            return res.status(400).json({ message: 'Failed to delete season.' });
         }
     } catch (err) {
         console.error(err);
         res.status(500).send('Internal server error');
     }
-} // TODO: Test and delete all associated objects
+};
+
 
 /** /leagues/:_id/seasons/:_sid */
 // GET Get season by sid
