@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const options = { discriminatorKey: 'type', collection: 'games' };
+
 const gameSchema = new mongoose.Schema({
     sport: {
         type: String,
@@ -42,20 +44,7 @@ const gameSchema = new mongoose.Schema({
             default: false,
         }
     },
-});
-
-// Validation for two unique teams
-gameSchema.path('teams').validate(function (value) {
-    // Check if there are exactly two teams
-    if (value.length !== 2) {
-        throw new Error('Teams array must contain exactly two teams.');
-    }
-    // Check if the two teams are unique
-    if (value[0].toString() === value[1].toString()) {
-        throw new Error('The two teams must be unique.');
-    }
-    return true;
-});
+}, options);
 
 module.exports = mongoose.model('Game', gameSchema);
 
