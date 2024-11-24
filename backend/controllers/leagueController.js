@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const League = require('../models/League');
 const Team = require('../models/Team');
 const Player = require('../models/Player');
+const User = require('../models/User');
+const Game = require('../models/Game')
 
 ///////////////////////////
 ////////// LEAGUE /////////
@@ -81,7 +83,7 @@ exports.getLeaguesBySport = async function (req, res) {
 /////////////////////////
 ///////// USER //////////
 /////////////////////////
-/** /league/:_id/managers */
+/** /league/:_id/manager */
 // GET Get all managers
 exports.getLeagueManagers = async function (req, res) {
     try {
@@ -120,16 +122,29 @@ exports.addManagerToLeague = async function (req, res) {
             return res.status(400).json({ message: 'Manager exists in league.' });
         }
 
-        const result = await League.updateOne(
+        const leagueResult = await League.updateOne(
             { _id: leagueId },
             { $push: { managers: managerId } }
         );
 
-        if (result) {
-            return res.status(200).json(result);
-        } else {
-            return res.status(400).json({ message: 'No changes made to the league\'s managers.' });
+        const userResult = await User.updateOne(
+            { _id: managerId },
+            { $push: { leagues: leagueId } }
+        );
+
+        if (!userResult || userResult.modifiedCount === 0) {
+            await League.updateOne(
+                { _id: leagueId },
+                { $pull: { managers: managerId } }
+            );
+            return res.status(500).json({ message: 'Failed to add league to manager. Rollback successful.' });
         }
+
+        return res.status(200).json({
+            message: 'Manager successfully added to league and league added to manager.',
+            leagueResult,
+            userResult
+        });
     } catch (err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -155,16 +170,33 @@ exports.deleteManagerFromLeague = async function (req, res) {
             return res.status(400).json({ message: 'Manager does not exist in league.' });
         }
 
-        const result = await League.updateOne(
+        const leagueResult = await League.updateOne(
             { _id: leagueId },
             { $pull: { managers: managerId } }
         );
 
-        if (result) {
-            return res.status(200).json(result);
-        } else {
+        if (!leagueResult || leagueResult.modifiedCount === 0) {
             return res.status(400).json({ message: 'No changes made to the league\'s managers.' });
         }
+
+        const managerResult = await User.updateOne(
+            { _id: managerId },
+            { $pull: { leagues: leagueId } }
+        );
+
+        if (!managerResult || managerResult.modifiedCount === 0) {
+            await League.updateOne(
+                { _id: leagueId },
+                { $push: { managers: managerId } }
+            );
+            return res.status(500).json({ message: 'Failed to remove league from manager. Rollback successful.' });
+        }
+
+        return res.status(200).json({
+            message: 'Manager successfully removed from league and league removed from manager.',
+            leagueResult,
+            managerResult
+        });
     } catch (err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -514,6 +546,7 @@ exports.deletePlayerFromRoster = async function (req, res) {
     const leagueId = req.params._id;
     const seasonId = req.params._sid;
     const teamId = req.params._tid;
+    const playerToRemove = req.body.player;
 
     try {
         const league = await League.findById(leagueId).populate('seasons.teams').exec();
@@ -530,13 +563,9 @@ exports.deletePlayerFromRoster = async function (req, res) {
 
         if (!team.roster) return res.status(404).send({ message: 'An error occurred retrieving roster.' });
 
-        const newPlayer = await new Player(playerParams).save();
-
-        if (!newPlayer) return res.status(500).json({ message: 'An error occurred creating Player.' });
-
         const result = await Team.updateOne(
             { _id: teamId},
-            { $push: { "roster": newPlayer._id } }
+            { $pull: { "roster": playerToRemove._id } }
         );
 
         if (result) {
@@ -548,7 +577,7 @@ exports.deletePlayerFromRoster = async function (req, res) {
         console.error(err);
         res.status(500).send('Internal server error');
     }
-} // TODO: Test
+} // Test PASED
 
 /////////////////////////
 ///////// GAME //////////
@@ -560,21 +589,22 @@ exports.getSeasonGames = async function (req, res) {
     const seasonId = req.params._sid;
 
     try {
-        const league = await League.findById(
-            { _id: leagueId }
-        );
+        const league = await League.findById(leagueId).populate('seasons.games');
 
-        if (!league) return res.status(404).send({ message: 'League not found.' });
+        if (!league) {
+            return res.status(404).send({ message: 'League not found.' });
+        }
 
-        const season = league.seasons.find(s => s._id.toString() === seasonId);
+        const season = league.seasons.find(season => season.id.toString() === seasonId);
 
-        if (!season) return res.status(404).send({ message: 'Season not found.' });
+        if (!season) {
+            return res.status(404).send({ message: 'Season not found.' });
+        }
 
-        if (!season.games) return res.status(404).send({ message: 'Season games not found.' });
-
-        res.status(200).json(season.games);
+        const games = season.games || [];
+        res.status(200).json(games);
     } catch (err) {
-        console.log(err);
+        console.error(err);
         res.status(500).send({ message: 'An error occurred retrieving League.' });
     }
 } // Test PASSED
@@ -593,17 +623,28 @@ exports.addGameToSeason = async function (req, res) {
         if (!league.seasons)
             return res.status(400).send({ message: "Seasons does not exist in document" });
 
-        const season = league.seasons.filter((s1) => s1._id.toString() === seasonID);
+        const season = league.seasons.find(s => s._id.toString() === seasonID);
 
         if (!season)
             return res.status(404).send({ message: "Season not found" });
 
-        const game = season.games.some(game => game.toString() === gameToAdd);
+        var games = [];
 
-        if (game)
-            return res.status(400).send({ message: "Game already exists" });
+        if (!season.games) games = [];
+        else games = season.games;
 
-        const result = await League.updateOne({ 'season._id': seasonID }, { $push: { 'seasons.$.games': gameToAdd._id } });
+        if (games.length > 0) {
+            const game = games.filter(item => item._id.toString() === gameToAdd._id.toString());
+
+            if (game.length > 0)
+                return res.status(400).send({ message: "Game already exists" });
+        }
+
+        const existGame = await Game.findById(gameToAdd._id);
+
+        if (!existGame) return res.status(400).send({ message: "Game does not exist" });
+
+        const result = await League.updateOne({ _id: leagueID,'seasons._id': seasonID }, { $push: { 'seasons.$.games': gameToAdd._id } });
 
         if (result)
             res.status(201).send(result);
@@ -613,7 +654,7 @@ exports.addGameToSeason = async function (req, res) {
     catch (e) {
         res.status(500).send({ message: "An error occurred while adding a game to season" })
     }
-} // TODO: Test
+} // Test PASSED
 
 // DELETE Delete game from season
 exports.deleteGameFromSeason = async function (req, res) {
@@ -621,7 +662,7 @@ exports.deleteGameFromSeason = async function (req, res) {
     const gameToDelete = req.body.game;
     const seasonID = req.params._sid;
 
-    try {
+    try { 
         const league = await League.findById(leagueID);
         if (!league)
             return res.status(404).send({ message: "League not found" });
@@ -629,24 +670,47 @@ exports.deleteGameFromSeason = async function (req, res) {
         if (!league.seasons)
             return res.status(400).send({ message: "Seasons does not exist in document" });
 
-        const season = league.seasons.filter((s1) => s1._id.toString() === seasonID);
+        const season = league.seasons.find(s => s._id.toString() === seasonID);
 
         if (!season)
             return res.status(404).send({ message: "Season not found" });
 
-        const game = season.games.some(game => game.toString() === gameToDelete);
+        var games = [];
 
-        if (!game)
-            return res.status(400).send({ message: "Game does not exist" });
+        if (!season.games) games = [];
+        else games = season.games;
 
-        const result = await League.updateOne({ 'seasons._id': seasonID }, { $pull: { 'season.$.games': gameToDelete } });
+        console.log(games);
+        console.log(gameToDelete._id)
+
+        if (games.length > 0) {
+            const game = games.filter(item => item._id.toString() === gameToDelete._id.toString());
+
+            if (game.length === 0)
+                return res.status(400).send({ message: "Game does not exists" });
+        } else {
+            return res.status(400).send({ message: "Game is empty" });
+        }
+
+        const result = await League.updateOne({ _id: leagueID,'seasons._id': seasonID }, { $pull: { 'seasons.$.games': gameToDelete._id } });
+        
+        const deletedGame = await Game.findByIdAndDelete(gameToDelete._id);
+
+        if (!deletedGame) {
+            await League.updateOne(
+                { _id: leagueID, 'seasons._id': seasonID },
+                { $push: { 'seasons.$.games': gameToDelete._id } }
+            );
+            return res.status(500).send({ message: "An error occurred while deleting the game document" });
+        }
+
         if (result)
-            res.status(201).send(result);
+            res.status(200).send(result);
         else
-            res.status(400).send({ message: "No changes were made" });
+            res.status(400).send({ message: "No changes were made" })
     }
     catch (e) {
-        res.status(500).send({ message: "An error occurred while delete a game from season" })
+        res.status(500).send({ message: "An error occurred while adding a game to season" })
     }
-} // TODO: Test
+} // Test PASSED
 

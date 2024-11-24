@@ -10,7 +10,7 @@ router.route("/:_id")
     .get(controller.getLeagueByID)
     .delete(controller.deleteLeague);
 
-router.route("/:_id/managers")
+router.route("/:_id/manager")
     .get(controller.getLeagueManagers)
     .post(controller.addManagerToLeague)
     .delete(controller.deleteManagerFromLeague);
@@ -36,7 +36,8 @@ router.route("/:_id/season/:_sid/team/:_tid")
 
 router.route("/:_id/season/:_sid/team/:_tid/player")
     .get(controller.getPlayers)
-    .post(controller.addPLayerToRoster);
+    .post(controller.addPLayerToRoster)
+    .delete(controller.deletePlayerFromRoster);
 
 router.route("/:_id/season/:_sid/game")
     .get(controller.getSeasonGames)

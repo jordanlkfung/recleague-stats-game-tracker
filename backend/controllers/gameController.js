@@ -6,20 +6,31 @@ const Game = require('../models/Game');
 //POST
 exports.newGame = async function (req, res) {
     const sport = req.body.sport;
-    var game;
-    if (sport === 'Basketball')
-        game = new Basketball(req.body)
-    else
-        return res.status(404).send({ message: "Game does not exist" });
-    try {
-        const newGame = await game.save();
-        if (newGame)
-            res.status(201).send(newGame);
+
+    if (sport === 'Basketball') {
+        try {
+            console.log('Game is Basketball');
+            const game = new Basketball(req.body);
+    
+            if (!game) return res.status(500).json({ message: 'Create basketball game error.'  });
+            console.log("Created game: ", game);
+
+            console.log('Saving game');
+            const newGame = await game.save();
+            if (!newGame) return res.status(500).json({ message: 'Saving basketball game error.'  });
+
+            return res.status(201).json(newGame);
+        }
+        catch (e) {
+            console.log(e);
+            res.status(500).send({ message: 'An error occurred' });
+        }
     }
-    catch (e) {
-        res.status(500).send({ message: 'An error occurred' });
+    else {
+        return res.status(404).send({ message: "Sport does not exist" });
     }
-}
+} // Test Passed
+
 //GET
 exports.getAllGames = async function (req, res) {
     try {
@@ -29,7 +40,7 @@ exports.getAllGames = async function (req, res) {
     catch (e) {
         res.status(500).send({ message: "An error has occurred" });
     }
-}
+} // Test Passed
 
 /** /game/:_id */
 
@@ -46,17 +57,19 @@ exports.getGame = async function (req, res) {
     catch (e) {
         res.status(500).send({ message: "An error has occurred" });
     }
-}
+} // Test PASSED
 
 //DELETE delete game
 exports.deleteGame = async function (req, res) {
     const gameID = req.params._id;
     try {
+        console.log(gameID);
         const game = await Game.findById(gameID);
+        console.log(game);
         if (!game)
             return res.status(404).send({ message: "Game does not exist" });
-
-        const result = await Game.remove({ _id: gameID });
+        console.log(game !== null);
+        const result = await Game.deleteOne({ _id: gameID });
         if (result)
             res.status(200).send({ message: "Delete successful" });
         else
@@ -65,7 +78,7 @@ exports.deleteGame = async function (req, res) {
     catch (e) {
         res.status(500).send({ message: "An error has occurred" });
     }
-}
+} // Test PASSED
 
 exports.setResult = async function (req, res) {
     //when there is a winning and losing team, team1 will be the winning team, team2 will be the losing team
