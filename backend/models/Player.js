@@ -9,8 +9,6 @@ const playerSchema = new mongoose.Schema ({
    birthdate: {
         type: Date,
         required: [true, 'birthdate is required.'],
-        min: [new Date(new Date().setFullYear(new Date().getFullYear() - 6)), 'Player must be 6 years old or older.'], 
-        max: [new Date(new Date().setFullYear(new Date().getFullYear() + 100)), 'Player must be 100 years old or younger.'],
    },
    sex: {
         type: String,
@@ -29,7 +27,6 @@ const playerSchema = new mongoose.Schema ({
         min: [0, 'Inches cannot be negative.'],
         max: [11, 'Inches must be at most 11.'], 
     },
-    required: [true, 'Height required.'],
    },
    weight: {
         type: Number,
@@ -42,7 +39,7 @@ const playerSchema = new mongoose.Schema ({
    },
 });
 
-module.exports = mongoose.model('player', playerSchema);
+module.exports = mongoose.model('Player', playerSchema);
 
 /**
  * In League Settings: managers inpute teams and then players

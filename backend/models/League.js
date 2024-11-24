@@ -46,27 +46,41 @@ const leagueSchema = new mongoose.Schema({
     }],
 });
 
-//Generating Unique Identifier for seasons
-leagueSchema.pre('save', function (next) {
-    seasons.forEach(season => {
-        season.uniqueIdentifier = season.start_date.toISOString().split('T')[0].replace(/-/g, '') + season.end_date.toISOString().split('T')[0].replace(/-/g, '');
-    });
-})
-
 // Custom validation for unique mangaers in the managers array
 leagueSchema.path('managers').validate(function (value) {
     // Use a Set to ensure all managers are unique
     return value.length === new Set(value.map(manager => manager.toString())).size;
 }, 'Managers must contain unique managers.');
 
-// Custom validation for unique teams in the teams array
-leagueSchema.path('teams').validate(function (value) {
-    // Use a Set to ensure all teams are unique
-    return value.length === new Set(value.map(team => team.toString())).size;
-}, 'Teams must contain unique teams.');
+leagueSchema.pre('remove', async function (next) {
+    try {
+        // Iterate over seasons in the league
+        for (const season of this.seasons) {
+            // Delete all teams in the season
+            for (const teamId of season.teams) {
+                const team = await Team.findById(teamId);
+                if (team) {
+                    // Delete all players in the team's roster
+                    await Player.deleteMany({ _id: { $in: team.roster } });
+                    // Delete the team itself
+                    await team.remove();
+                }
+            }
+
+            // Delete all games in the season
+            await Game.deleteMany({ _id: { $in: season.games } });
+        }
+
+        next(); // Proceed to remove the league
+    } catch (err) {
+        next(err); // Pass error to the next middleware
+    }
+});
+
 
 // Add presave for name, seasons, managers, and teams uniqueness
 // Figure out a way to automate seasons id (maybe startdate and enddate combined)
+
 
 module.exports = mongoose.model('League', leagueSchema);
 

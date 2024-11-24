@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
-League = mongoose.model('League');
+const League = require('../models/League');
+const Team = require('../models/Team');
+const Player = require('../models/Player');
 
+///////////////////////////
+////////// LEAGUE /////////
+///////////////////////////
 /** /league */
 // POST Create new league
 exports.addLeague = async function (req, res) {
@@ -26,7 +31,7 @@ exports.getAllLeagues = async function (req, res) {
 
 /** /league/:_id */
 // GET league by id
-exports.getLeague = async function (req, res) {
+exports.getLeagueByID = async function (req, res) {
     try {
         const league = await League.findById(req.params._id);
         if (league) {
@@ -39,6 +44,43 @@ exports.getLeague = async function (req, res) {
     }
 }; // Test Passed
 
+/** /league/:_id */
+// DELETE Delete league
+exports.deleteLeague = async function (req, res) {
+    try {
+        const league = await League.findById(req.params._id);
+        if (!league) {
+            console.log('League not found.');
+            return;
+        }
+        await league.remove();
+        console.log('League and associated data successfully deleted.');
+    } catch (err) {
+        console.error(err);
+    }
+} // TODO: Test
+
+/** /:sport */
+// :sport is the enum 
+// GET Get leagues by sport
+exports.getLeaguesBySport = async function (req, res) {
+    try {
+        const leagues = await League.find({ sport: req.params.sport });
+        if (!leagues) {
+            return res.status(404).send({ message: 'No leagues with entered sport were found' });
+        }
+        else {
+            res.status(200).json(leagues);
+        }
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error occurred' });
+    }
+} // Test PASSED
+
+/////////////////////////
+///////// USER //////////
+/////////////////////////
 /** /league/:_id/managers */
 // GET Get all managers
 exports.getLeagueManagers = async function (req, res) {
@@ -66,8 +108,11 @@ exports.addManagerToLeague = async function (req, res) {
 
         if (!league) return res.status(404).json({ message: 'League not found.' });
 
-        if (!league.managers) return res.status(404).json({ message: 'League\'s managers not found.' });
+        const user = await User.findById(managerId);
 
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+
+        if (!league.managers) return res.status(404).json({ message: 'League\'s managers not found.' });
 
         const managers = league.managers.filter(item => item.toString() === managerId);
 
@@ -126,88 +171,9 @@ exports.deleteManagerFromLeague = async function (req, res) {
     }
 } // Test PASSED
 
-/** /leagues/:_id/teams */
-// GET Get all teams
-exports.getLeagueTeams = async function (req, res) {
-    try {
-        const league = await League.findById(req.params._id).populate('teams');
-        res.status(200).send(league.teams);
-    }
-    catch (e) {
-        res.status(500).send({ message: 'An error occurred' });
-    }
-} // Test PASSED
-
-// POST Add team to league
-exports.addTeamToLeague = async function (req, res) {
-    const leagueId = req.params._id;
-    const teamId = req.body.teamId;
-
-    try {
-        const league = await League.findById(leagueId);
-
-        if (!league) return res.status(404).json({ message: 'League not found.' });
-
-        if (!league.teams) return res.status(404).json({ message: 'League\'s team not found.' });
-
-
-        const teams = league.teams.filter(item => item.toString() === teamId);
-
-        if (teams.length > 0) {
-            return res.status(400).json({ message: 'Team exists in league.' });
-        }
-
-        const result = await League.updateOne(
-            { _id: leagueId },
-            { $push: { teams: teamId } }
-        );
-
-        if (result) {
-            return res.status(200).json(result);
-        } else {
-            return res.status(400).json({ message: 'No changes made to the league\'s teams.' });
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
-    }
-} // Not tested
-
-// DELETE Delete team from league
-exports.deleteTeamFromLeague = async function (req, res) {
-    const leagueId = req.params._id;
-    const teamId = req.body.teamId;
-
-    try {
-        const league = await League.findById(leagueId);
-
-        if (!league) return res.status(404).json({ message: 'League not found.' });
-
-        if (!league.teams) return res.status(404).json({ message: 'League\'s team not found.' });
-
-
-        const teams = league.teams.filter(item => item.toString() === teamId);
-
-        if (!teams.length > 0) {
-            return res.status(400).json({ message: 'Team does not exist in league.' });
-        }
-
-        const result = await League.updateOne(
-            { _id: leagueId },
-            { $pull: { teams: teamId } }
-        );
-
-        if (result) {
-            return res.status(200).json(result);
-        } else {
-            return res.status(400).json({ message: 'No changes made to the league\'s teams.' });
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
-    }
-} // Not tested
-
+//////////////////////////
+///////// SEASON /////////
+//////////////////////////
 /** /leagues/:_id/seasons */
 // GET Get all seasons
 exports.getLeagueSeasons = async function (req, res) {
@@ -223,7 +189,6 @@ exports.getLeagueSeasons = async function (req, res) {
         res.status(500).send({ message: 'An error has occurred' })
     }
 }  // Test Passed
-
 
 // POST Add season to seasons
 exports.addSeasonToSeasons = async function (req, res) {
@@ -265,6 +230,8 @@ exports.addSeasonToSeasons = async function (req, res) {
                     seasons: {
                         start_date: newStartDate,
                         end_date: newEndDate,
+                        teams: [],
+                        games: [],
                     }
                 }
             }
@@ -314,11 +281,11 @@ exports.deleteSeasonFromSeasons = async function (req, res) {
         console.error(err);
         res.status(500).send('Internal server error');
     }
-} // Test PASSED
+} // TODO: Test and delete all associated objects
 
 /** /leagues/:_id/seasons/:_sid */
 // GET Get season by sid
-exports.getSeason = async function (req, res) {
+exports.getSeasonByID = async function (req, res) {
     const leagueId = req.params._id;
     const seasonId = req.params._sid;
 
@@ -340,13 +307,285 @@ exports.getSeason = async function (req, res) {
     }
 }; // Test Passed
 
+/////////////////////////
+///////// TEAM //////////
+/////////////////////////
+/** /leagues/:_id/season/:_sid/team */
+// GET Get all teams in season
+exports.getLeagueTeams = async function (req, res) {
+    try {
+        const league = await League.findById(req.params._id).populate('seasons.teams').exec();
+
+        if (!league) return res.status(404).send({ message: 'An error occurred retrieving League.' });
+        
+        const season = league.seasons.find(s => s._id.toString() === req.params._sid);
+
+        if (!season) return res.status(404).send({ message: 'An error occurred retrieving Season.' });
+
+        if (!season.teams) return res.status(404).send({ message: 'An error occurred retrieving Team.' });
+        
+        res.status(200).send(season.teams);
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error occurred' });
+    }
+} // Test PASSED
+
+// POST Add team to league
+exports.addTeamToSeason = async function (req, res) {
+    const leagueId = req.params._id;
+    const seasonId = req.params._sid;
+    const teamParams = req.body.team;
+
+    try {
+        const league = await League.findById(leagueId).populate('seasons.teams').exec();
+
+        if (!league) return res.status(404).json({ message: 'League not found.' });
+
+        const season = league.seasons.find(s => s._id.toString() === req.params._sid);
+
+        if (!season) return res.status(404).send({ message: 'An error occurred retrieving Season.' });
+
+        if (!season.teams) return res.status(404).json({ message: 'An error occurred retrieving Team.' });
+
+        if (!teamParams.name) return res.status(404).json({ message: 'Team name is not included.' });
+
+        const team = season.teams.filter(t => t.name === teamParams.name);
+        
+        if (team.length > 0) {
+            return res.status(400).json({ message: 'Team exists in league.' });
+        }
+
+        const newTeam = await new Team(teamParams).save();
+
+        if (!newTeam) return res.status(500).json({ message: 'An error occurred creating Team.' });
+
+        const result = await League.updateOne(
+            { _id: leagueId, "seasons._id": seasonId },
+            { $push: { "seasons.$.teams": newTeam._id } }
+        );
+
+        if (result) {
+            return res.status(200).json(result);
+        } else {
+            return res.status(400).json({ message: 'No changes made to the league\'s teams.' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+} // Test Passed
+
+// DELETE Delete team from league
+exports.deleteTeamFromSeason = async function (req, res) {
+    const leagueId = req.params._id;
+    const teamId = req.body.teamId;
+
+    try {
+        const league = await League.findById(leagueId);
+
+        if (!league) return res.status(404).json({ message: 'League not found.' });
+
+        if (!league.teams) return res.status(404).json({ message: 'League\'s team not found.' });
+
+
+        const teams = league.teams.filter(item => item.toString() === teamId);
+
+        if (!teams.length > 0) {
+            return res.status(400).json({ message: 'Team does not exist in league.' });
+        }
+
+        const result = await League.updateOne(
+            { _id: leagueId },
+            { $pull: { teams: teamId } }
+        );
+
+        if (result) {
+            return res.status(200).json(result);
+        } else {
+            return res.status(400).json({ message: 'No changes made to the league\'s teams.' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+} // TODO: Test
+
+/** /leagues/:_id/season/:_sid/team/:_tid */
+// TODO: Get team by id in season in league
+exports.getTeamByID = async function (req, res) {
+    try {
+        const league = await League.findById(req.params._id).populate('seasons.teams').exec();
+
+        if (!league) return res.status(404).send({ message: 'An error occurred retrieving League.' });
+        
+        const season = league.seasons.find(s => s._id.toString() === req.params._sid);
+
+        if (!season) return res.status(404).send({ message: 'An error occurred retrieving Season.' });
+
+        if (!season.teams) return res.status(404).send({ message: 'An error occurred retrieving Team.' });
+
+        const team = season.teams.find(t => t._id.toString() === req.params._tid);
+
+        if (!team) return res.status(404).send({ message: 'An error occurred retrieving Team.' });
+        
+        res.status(200).send(team);
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error occurred' });
+    }
+} // Test PASSED
+
+/** /leagues/:_id/season/:_sid/team/:_tid/player */
+// GET Get team roster
+exports.getPlayers = async function (req, res) {
+    try {
+        const league = await League.findById(req.params._id).populate('seasons.teams').exec();
+
+        if (!league) return res.status(404).send({ message: 'An error occurred retrieving League.' });
+        
+        const season = league.seasons.find(s => s._id.toString() === req.params._sid);
+
+        if (!season) return res.status(404).send({ message: 'An error occurred retrieving Season.' });
+
+        if (!season.teams) return res.status(404).send({ message: 'An error occurred retrieving Team.' });
+
+        var team = season.teams.find(t => t._id.toString() === req.params._tid);
+
+        if (!team) return res.status(404).send({ message: 'An error occurred retrieving Team.' });
+
+        team = await Team.findById(team._id).populate('roster');
+
+        if (!team.roster) return res.status(404).send({ message: 'An error occurred retrieving Players.' });
+        
+        return res.status(200).json(team.roster);
+    }
+    catch (e) {
+        res.status(500).send({ message: 'An error occurred' });
+    }
+} // Test PASSED
+
+/** /leagues/:_id/season/:_sid/team/:_tid/player */
+// TODO: Add players
+exports.addPLayerToRoster = async function (req, res) {
+    const leagueId = req.params._id;
+    const seasonId = req.params._sid;
+    const teamId = req.params._tid;
+    const playerParams = req.body.player;
+
+    try {
+        const league = await League.findById(leagueId).populate('seasons.teams').exec();
+
+        if (!league) return res.status(404).json({ message: 'League not found.' });
+
+        const season = league.seasons.find(s => s._id.toString() === seasonId);
+
+        if (!season) return res.status(404).send({ message: 'An error occurred retrieving Season.' });
+
+        const team = season.teams.find(t => t._id.toString() === teamId);
+
+        if (!team) return res.status(404).send({ message: 'An error occurred retrieving Team.' });
+
+        if (!team.roster) return res.status(404).send({ message: 'An error occurred retrieving roster.' });
+
+        const newPlayer = await new Player(playerParams).save();
+
+        if (!newPlayer) return res.status(500).json({ message: 'An error occurred creating Player.' });
+
+        const result = await Team.updateOne(
+            { _id: teamId},
+            { $push: { "roster": newPlayer._id } }
+        );
+
+        if (result) {
+            return res.status(200).json(result);
+        } else {
+            return res.status(400).json({ message: 'No changes made to the league\'s teams.' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+} // Test PASSED
+
+/** /leagues/:_id/season/:_sid/team/:_tid/player */
+// DELETE Delte player from roster
+exports.deletePlayerFromRoster = async function (req, res) {
+    const leagueId = req.params._id;
+    const seasonId = req.params._sid;
+    const teamId = req.params._tid;
+
+    try {
+        const league = await League.findById(leagueId).populate('seasons.teams').exec();
+
+        if (!league) return res.status(404).json({ message: 'League not found.' });
+
+        const season = league.seasons.find(s => s._id.toString() === seasonId);
+
+        if (!season) return res.status(404).send({ message: 'An error occurred retrieving Season.' });
+
+        const team = season.teams.find(t => t._id.toString() === teamId);
+
+        if (!team) return res.status(404).send({ message: 'An error occurred retrieving Team.' });
+
+        if (!team.roster) return res.status(404).send({ message: 'An error occurred retrieving roster.' });
+
+        const newPlayer = await new Player(playerParams).save();
+
+        if (!newPlayer) return res.status(500).json({ message: 'An error occurred creating Player.' });
+
+        const result = await Team.updateOne(
+            { _id: teamId},
+            { $push: { "roster": newPlayer._id } }
+        );
+
+        if (result) {
+            return res.status(200).json(result);
+        } else {
+            return res.status(400).json({ message: 'No changes made to the league\'s teams.' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+} // TODO: Test
+
+/////////////////////////
+///////// GAME //////////
+/////////////////////////
+/** /league/:_id/season/:_sid/game */
+// GET Get all games in season
+exports.getSeasonGames = async function (req, res) {
+    const leagueId = req.params._id;
+    const seasonId = req.params._sid;
+
+    try {
+        const league = await League.findById(
+            { _id: leagueId }
+        );
+
+        if (!league) return res.status(404).send({ message: 'League not found.' });
+
+        const season = league.seasons.find(s => s._id.toString() === seasonId);
+
+        if (!season) return res.status(404).send({ message: 'Season not found.' });
+
+        if (!season.games) return res.status(404).send({ message: 'Season games not found.' });
+
+        res.status(200).json(season.games);
+    } catch (err) {
+        console.log(err);
+        res.status(500).send({ message: 'An error occurred retrieving League.' });
+    }
+} // Test PASSED
+
 // POST Add games to season
 exports.addGameToSeason = async function (req, res) {
     const leagueID = req.params._id;
     const gameToAdd = req.body.game;
     const seasonID = req.params._sid;
 
-    try {
+    try { 
         const league = await League.findById(leagueID);
         if (!league)
             return res.status(404).send({ message: "League not found" });
@@ -364,7 +603,7 @@ exports.addGameToSeason = async function (req, res) {
         if (game)
             return res.status(400).send({ message: "Game already exists" });
 
-        const result = await League.updateOne({ 'season._id': seasonID }, { $push: { 'seasons.$.games': gameToAdd } });
+        const result = await League.updateOne({ 'season._id': seasonID }, { $push: { 'seasons.$.games': gameToAdd._id } });
 
         if (result)
             res.status(201).send(result);
@@ -374,7 +613,7 @@ exports.addGameToSeason = async function (req, res) {
     catch (e) {
         res.status(500).send({ message: "An error occurred while adding a game to season" })
     }
-}
+} // TODO: Test
 
 // DELETE Delete game from season
 exports.deleteGameFromSeason = async function (req, res) {
@@ -409,32 +648,5 @@ exports.deleteGameFromSeason = async function (req, res) {
     catch (e) {
         res.status(500).send({ message: "An error occurred while delete a game from season" })
     }
-}
+} // TODO: Test
 
-/** /:sport */
-// :sport is the enum 
-// GET Get leagues by sport
-exports.getLeaguesBySport = async function (req, res) {
-    try {
-        const leagues = await League.find({ sport: req.params.sport });
-        if (!leagues) {
-            res.status(404).send({ message: 'No leagues with entered sport were found' });
-        }
-        else {
-            res.status(200).send(leagues);
-        }
-    }
-    catch (e) {
-        res.status(500).send({ message: 'An error occurred' });
-    }
-} // Not tested
-
-//GET specific season
-exports.getLeagueSeason = async function (req, res) {
-    try {
-        const season = await League.find({ seasons: { $elemMatch: { uniqueIdentifier: req.params.seasonID } } }, { seasons: 1 });
-    }
-    catch (e) {
-        res.status(500).send({ message: 'An error has occurred' });
-    }
-} // Not tested
