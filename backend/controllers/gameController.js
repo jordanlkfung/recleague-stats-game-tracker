@@ -182,7 +182,7 @@ exports.changeTeam = async function (req, res) {
         var addResult = false;
         var removeResult = false;
 
-        if (teamAdd) {
+        if (teamAdd && game.teams.length < 2) {
             const addExists = game.teams.filter(t => t._id.toString() === teamToAdd);
 
             if (addExists.length > 0) return res.status(400).send({ message: 'Team exists already' });
@@ -264,6 +264,25 @@ exports.updateStats = async function (req, res) {
             return res.status(404).send({ message: "Game not found" });
         }
 
+        const sport = game.sport;  
+        let validKeys = [];
+  
+        if (sport === 'Basketball') {
+            validKeys = [
+                'min', 'fgm', 'fga', 'threeptm', 'threeptsa', 'ftm', 'fta', 
+                'rebounds', 'assists', 'blocks', 'steals', 'pf', 'to', 'points'
+            ];
+        }
+        else {
+            return res.status(404).send({ message: "Sport does not exist" });
+        }
+
+        for (let key in statUpdates) {
+            if (!validKeys.includes(key)) {
+                return res.status(400).send({ message: `Invalid stat key: ${key} for sport ${sport}` });
+            }
+        }
+
         let playerStat = null;
         for (let stat of game.stat) {
             if (stat.player.toString() === playerId) {
@@ -274,21 +293,6 @@ exports.updateStats = async function (req, res) {
 
         if (!playerStat) {
             const newStat = {
-                player: playerId,
-                min: 0,
-                fgm: 0,
-                fga: 0,
-                threeptm: 0,
-                threeptsa: 0,
-                ftm: 0,
-                fta: 0,
-                rebounds: 0,
-                assists: 0,
-                blocks: 0,
-                steals: 0,
-                pf: 0,
-                to: 0,
-                points: 0,
                 ...statUpdates
             };
             
