@@ -20,11 +20,14 @@ const gameSchema = new mongoose.Schema({
         match: [/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:MM format.'],
     },
     teams: [{
-        type: mongoose.Schema.Types.ObjectId,
+        team: {
+            type: mongoose.Schema.Types.ObjectId,
         ref: 'Team',
+        },
         score: {
             type: Number,
             required: [true, 'Score is required.'],
+            default: 0,
         }
     }],
     result: {
