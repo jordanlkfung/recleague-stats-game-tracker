@@ -49,18 +49,61 @@ exports.getLeagueByID = async function (req, res) {
 /** /league/:_id */
 // DELETE Delete league
 exports.deleteLeague = async function (req, res) {
+    const leagueId = req.params._id;
+
     try {
-        const league = await League.findById(req.params._id);
-        if (!league) {
-            console.log('League not found.');
-            return;
+        const league = await League.findById(leagueId).populate('seasons.teams').exec();
+
+        console.log('Populated');
+
+        if (!league) return res.status(404).json({ message: 'League not found.' });
+
+        // Seasons: Team, Player, and Game
+        if (league.seasons && league.seasons.length > 0) {
+            for (let season of league.seasons) {
+                if (season.teams && season.teams.length > 0) {
+                    for (let team of season.teams) {
+                        if (team.roster && team.roster.length > 0) {
+                            await Player.deleteMany({ _id: { $in: team.roster } });
+                        }
+        
+                        await Team.findByIdAndDelete(team._id);
+                    }
+                }
+        
+                if (season.games && season.games.length > 0) {
+                    const gameIds = season.games.map(game => game._id);
+                    await Game.deleteMany({ _id: { $in: gameIds } });
+                }
+                
+                await League.updateOne(
+                    { _id: leagueId },
+                    { $pull: { seasons: { _id: season._id } } }
+                );
+            }
         }
-        await league.remove();
-        console.log('League and associated data successfully deleted.');
+        
+
+        // Managers
+        if (league.managers || league.managers.length > 0) {
+            await User.updateMany(
+                { _id: { $in: league.managers }},
+                { $pull: { leagues: leagueId} }
+            )
+        }
+
+        const result = await League.findByIdAndDelete(leagueId);
+        if (result || result.modifiedCount > 0) {
+            return res.status(200).json({ message: 'League and all associated data deleted successfully.' });
+        } else {
+            return res.status(400).json({ message: 'Failed to delete league.' });
+        }
     } catch (err) {
         console.error(err);
+        return res.status(500).send('Internal server error');
     }
-} // TODO: Test
+};
+
 
 /** /:sport */
 // :sport is the enum 
@@ -283,7 +326,6 @@ exports.addSeasonToSeasons = async function (req, res) {
 } // Test PASSED
 
 // DELETE Delete season from seasons
-// DELETE Delete season from seasons
 exports.deleteSeasonFromSeasons = async function (req, res) {
     const leagueId = req.params._id;
     const seasonId = req.body.seasonId;
@@ -463,10 +505,9 @@ exports.deleteTeamFromSeason = async function (req, res) {
         console.error(err);
         res.status(500).send('Internal server error');
     }
-} // TODO: Test
+} // Test PASSED
 
 /** /leagues/:_id/season/:_sid/team/:_tid */
-// TODO: Get team by id in season in league
 exports.getTeamByID = async function (req, res) {
     try {
         const league = await League.findById(req.params._id).populate('seasons.teams').exec();
@@ -520,7 +561,6 @@ exports.getPlayers = async function (req, res) {
 } // Test PASSED
 
 /** /leagues/:_id/season/:_sid/team/:_tid/player */
-// TODO: Add players
 exports.addPLayerToRoster = async function (req, res) {
     const leagueId = req.params._id;
     const seasonId = req.params._sid;
