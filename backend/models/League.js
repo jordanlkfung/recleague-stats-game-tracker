@@ -1,4 +1,8 @@
 const mongoose = require('mongoose');
+const Team = require('../models/Team');
+const Player = require('../models/Player');
+const User = require('../models/User');
+const Game = require('../models/Game')
 
 const leagueSchema = new mongoose.Schema({
     name: {
@@ -42,23 +46,19 @@ const leagueSchema = new mongoose.Schema({
     }],
 });
 
-// Custom validation for unique mangaers in the managers array
-leagueSchema.path('managers').validate(function (value) {
-    // Use a Set to ensure all managers are unique
-    return value.length === new Set(value.map(manager => manager.toString())).size;
-}, 'Managers must contain unique managers.');
-
 leagueSchema.pre('remove', async function (next) {
     try {
-        // Iterate over seasons in the league
+         await User.updateMany(
+            { _id: { $in: this.managers } }, 
+            { $pull: { leagues: this._id } } 
+        );
+
         for (const season of this.seasons) {
             // Delete all teams in the season
             for (const teamId of season.teams) {
                 const team = await Team.findById(teamId);
                 if (team) {
-                    // Delete all players in the team's roster
                     await Player.deleteMany({ _id: { $in: team.roster } });
-                    // Delete the team itself
                     await team.remove();
                 }
             }
