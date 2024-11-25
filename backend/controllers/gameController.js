@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Basketball = require('../models/sports/Basketball');
 const Game = require('../models/Game');
+const Team = require('../models/Team');
 
 /** /game */
 //POST
@@ -81,59 +82,81 @@ exports.deleteGame = async function (req, res) {
 } // Test PASSED
 
 exports.setResult = async function (req, res) {
-    //when there is a winning and losing team, team1 will be the winning team, team2 will be the losing team
-    try {
-        var updatedGame;
-        if (!req.body.tie) {
-            updatedGame = Game.findOneAndUpdate({ '_id': req.params._id }, {
-                $set: {
-                    'teams.$[team1].score': req.body.team1.score,
-                    'teams.$[team2].score': req.body.team2.score,
-                    'result.winner': req.body.team1._id,
-                    'result.loser': req.body.team2._id
-                }
-            }, {
-                arrayFilers: [{ 'team1._id': req.body.team1._id }, //means for the first update _id is equal to the passed in ID
-                { 'team2._id': req.body.team2._id }]
-            }, {
-                new: true
-            });
-        }
-        else {
-            //game ended in tie
-            updatedGame = Game.findOneAndUpdate({ _id: req.body._id }, {
-                $set: {
-                    'teams.$[team1].score': req.body.team1.score,
-                    'teams.$[team2].score': req.body.team2.score,
-                    'result.tie': true
-                }
+    const gameID = req.params._id;
 
-            }, { arrayFilers: [{ 'team1._id': req.body.team1._id }, { 'team2._id': req.body.team2._id }] }, { new: true });
-        }
-        if (!updatedGame)
-            res.status(404).send({ message: "Game not found" });
-        else
-            res.status(201).send(updatedGame);
-    }
-    catch (e) {
-        res.status(500).send({ message: 'An error occured' });
-    }
-}
-
-exports.updateGameStatsAndResults = async function (req, res) {
     try {
-        const updatedGame = await Game.findOne({ '_id': req.params._id });
-        if (updatedGame) {
-            updatedGame.team[req.body.team1].score = req.body.team1.score;
-            updatedGame.team[req.body.team2].score = req.body.team2.score;
-            if (req.body.tie) {
-                updatedGame.result.tie = true;
-            } else {
-                updatedGame.result.winner = req.body.team1;
-                updatedGame.result.loser = req.body.team2;
+        const game = await Game.findById(gameID);
+
+        if (!game) {
+            return res.status(404).send({ message: "Game not found" });
+        }
+
+        if (game.teams.length !== 2) {
+            return res.status(400).send({ message: "Game must have exactly two teams" });
+        }
+
+        const team1 = game.teams[0];
+        const team2 = game.teams[1];
+
+        let winner = null;
+        let loser = null;
+        let tie = false;
+
+        if (team1.score > team2.score) {
+            winner = team1.team;
+            loser = team2.team;
+            tie = false;
+        } else if (team1.score < team2.score) {
+            winner = team2.team;
+            loser = team1.team;
+            tie = false;
+        } else {
+            tie = true;
+        }
+
+        const resultUpdate = {
+            winner: winner,
+            loser: loser,
+            tie: tie
+        };
+
+        const result = await Game.findByIdAndUpdate(gameID, { result: resultUpdate }, { new: true });
+
+        if (!result) {
+            return res.status(400).send({ message: "Failed to update game result" });
+        }
+
+        return res.status(200).send(result);
+    } catch (e) {
+        console.error(e);
+        res.status(500).send({ message: 'An error occurred' });
+    }
+};
+
+
+exports.modifyScore = async function (req, res) {
+    const teamId = req.body.teamId;
+    const newScore = req.body.newScore;
+    const gameID = req.params._id;
+
+    try {
+        const game = await Game.findById(gameID);
+
+        if (!game)
+            return res.status(404).send({ message: "Game not found" });
+
+        for (let item of game.teams) {
+            console.log('passed')
+            if (item.team._id.toString() === teamId) {
+                item.score = newScore;
+
+                const result = game.save();
+
+                if (!result) return res.status(400).send({ message: 'Update Score Error' });
+
+
+                return res.status(200).send({ message: 'Success' });
             }
-            updatedGame.save();
-            res.status(200).send(updatedGame);
         }
     }
     catch (e) {
@@ -153,25 +176,52 @@ exports.changeTeam = async function (req, res) {
         if (!game)
             return res.status(404).send({ message: "Game not found" });
 
-        const teams = game.teams.filter(team => team.toString() === "teamToRemove");
+        const teamAdd = await Team.findById(teamToAdd);
+        const teamRemove = await Team.findById(teamToRemove);
 
-        if (!teams)
-            return res.status(404).send({ message: "Team to remove does not exist" });
+        var addResult = false;
+        var removeResult = false;
 
-        const result = await Game.updateOne({ _id: gameID }, { $pull: teamToRemove, $push: teamToAdd });
+        if (teamAdd) {
+            const addExists = game.teams.filter(t => t._id.toString() === teamToAdd);
 
-        if (result)
-            res.status(200).send(result);
-        else
+            if (addExists.length > 0) return res.status(400).send({ message: 'Team exists already' });
+
+            addResult = await Game.updateOne(
+                { _id: gameID }, 
+                { $push: { 'teams': { team: teamAdd._id } } }
+            );
+        } 
+
+
+        if (teamRemove) {
+            removeResult = await Game.updateOne(
+                { _id: gameID }, 
+                { $pull: { 'teams': { team: teamRemove._id } } }
+            );
+        } 
+
+
+        const result = {
+            add: addResult.acknowledged === true,
+            remove: removeResult.acknowledged === true,
+        }
+
+        console.log('passed');
+
+        if (addResult || removeResult) {
+            return res.status(200).json(result);
+        } else {
             res.status(400).send({ message: "No updates were made" });
+        }
     }
     catch (e) {
         res.status(500).send({ message: "An error occurred" });
     }
 }
 
-/** /team/:_id/modifyGame */
-exports.modifyGame = async function (req, res) {
+/** /team/:_id/modifyDate */
+exports.modifyDate = async function (req, res) {
     const { newDate, newTime } = req.body;
     const gameID = req.params._id;
 
@@ -202,3 +252,64 @@ exports.modifyGame = async function (req, res) {
         res.status(500).send({ message: "An error has occurred" });
     }
 }
+
+exports.updateStats = async function (req, res) {
+    const gameID = req.params._id;
+    const { playerId, statUpdates } = req.body;
+
+    try {
+        const game = await Game.findById(gameID);
+        
+        if (!game) {
+            return res.status(404).send({ message: "Game not found" });
+        }
+
+        let playerStat = null;
+        for (let stat of game.stat) {
+            if (stat.player.toString() === playerId) {
+                playerStat = stat;
+                break;
+            }
+        }
+
+        if (!playerStat) {
+            const newStat = {
+                player: playerId,
+                min: 0,
+                fgm: 0,
+                fga: 0,
+                threeptm: 0,
+                threeptsa: 0,
+                ftm: 0,
+                fta: 0,
+                rebounds: 0,
+                assists: 0,
+                blocks: 0,
+                steals: 0,
+                pf: 0,
+                to: 0,
+                points: 0,
+                ...statUpdates
+            };
+            
+            game.stat.push(newStat);
+        } else {
+            for (let key in statUpdates) {
+                playerStat[key] = statUpdates[key];
+            }
+        }
+
+        const result = await game.save();
+
+        if (!result) {
+            return res.status(400).send({ message: "Failed to update stats" });
+        }
+
+        return res.status(200).send(result);
+    } catch (e) {
+        console.error(e);
+        res.status(500).send({ message: "An error occurred" });
+    }
+};
+
+
