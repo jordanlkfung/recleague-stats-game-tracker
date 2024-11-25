@@ -50,6 +50,10 @@ Game = require('./models/Game.js');
 var teamRoute = require('./routes/gameRoutes.js');
 app.use('/game', teamRoute);
 
+Player = require('./models/Player.js')
+var playerRoute = require('./routes/playerRoutes.js');
+app.use('/player', playerRoute);
+
 app.all('*', (req, res) => {
     res.status(404);
     if (req.accepts('html')) {
