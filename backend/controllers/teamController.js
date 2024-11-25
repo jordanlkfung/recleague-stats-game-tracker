@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-Team = mongoose.model('Team');
+const Team = require('../models/Team');
+const Player = require('../models/Player');
 
 /** /team */
 //GET get all teams
@@ -12,6 +13,7 @@ exports.getAllTeams = async function (req, res) {
         res.status(500).send({ message: 'An error occured' });
     }
 }
+
 //POST Add team
 exports.addTeam = async function (req, res) {
     var team = new Team(req.body)
@@ -23,16 +25,29 @@ exports.addTeam = async function (req, res) {
         res.status(500).send({ message: 'An error occured' });
     }
 }
+
+exports.getTeamByID = async function (req, res) {
+    try {
+        const team = await Team.findById(req.params._id);
+        res.status(200).send(team);
+    }
+    catch (e) {
+        res.status(500).json(e);
+    }
+}
 /** /team/:_id/roster */
 //GET Get team roster
 exports.getRoster = async function (req, res) {
     try {
-        const roster = Team.findById(req.params._id, { roster: 1 }).populate('roster');
-        if (!roster) {
+        const team = await Team.findById(req.params._id).populate('roster');
+
+        console.log(team);
+
+        if (!team) {
             res.status(404).send({ message: 'Team not found' });
         }
         else {
-            res.status(200).send(roster);
+            res.status(200).send(team.roster);
         }
     }
     catch (e) {
@@ -40,37 +55,77 @@ exports.getRoster = async function (req, res) {
     }
 }
 
-// PATCH add or remove players
-exports.modifyRoster = async function (req, res) {
-    const { playersToAdd, playersToRemove } = req.body;
+exports.addPlayer = async function (req, res) {
+    const playerId = req.body.playerId;
+
     try {
-        const updateObj = {}
-        if (playersToAdd)
-            updateObj.$addToSet = Array.isArray(playersToAdd) ? { roster: { $each: playersToAdd } } : { roster: playersToRemove };
-        if (playersToRemove)
-            updateObj.$pull = Array.isArray(playersToRemove) ? { roster: { $in: playersToRemove } } : { roster: playersToRemove };
-        if (playersToAdd || playersToRemove) {
-            const updatedRoster = await Team.findByIdAndUpdate(req.params._id, updateObj, { new: true });
-            if (updatedRoster)
-                res.status(200).send(updatedRoster);
-            else
-                res.status(404).send({ message: 'Team does not exist' });
-        }
-        else {
-            res.status(400).send({ message: 'No update field provided' });
+        console.log(playerId);
+
+        const team = await Team.findById(req.params._id);       
+        
+        if (!team.roster) return res.status(404).send({ message: 'Roster not found' });
+
+        const roster = team.roster.filter(p => p._id.toString() === playerId);
+
+        if (roster && roster.length > 0) return res.status(400).send({ message: 'Player already exists in roster' });
+
+        const result = await Team.findByIdAndUpdate(
+            { _id: req.params._id },
+            { $push: { roster: playerId } }
+        );
+
+        if (result || result.modifiedCount > 0) {
+            return res.status(200).send({ message: 'Success' });
+        } else {
+            return res.status(400).send({ message: 'Error while pushing player ID from roster' });
         }
     }
     catch (e) {
-        res.status(500).send({ message: 'An error occured' });
+        res.status(500).send({ message: 'An error occured while adding player to team roster' });
     }
 }
+
+exports.deletePlayer = async function (req, res) {
+    const playerId = req.body.playerId;
+
+    try {
+        console.log(playerId);
+
+        const team = await Team.findById(req.params._id);       
+        
+        if (!team.roster) return res.status(404).send({ message: 'Roster not found' });
+
+        const roster = team.roster.filter(p => p._id.toString() === playerId);
+
+        if (!roster || roster.length === 0) return res.status(400).send({ message: 'Player does not exist in roster' });
+
+        const result = await Team.findByIdAndUpdate(
+            { _id: req.params._id },
+            { $pull: { roster: playerId } }
+        );
+
+        if (result || result.modifiedCount > 0) {
+            return res.status(200).send({ message: 'Success' });
+        } else {
+            return res.status(400).send({ message: 'Error while pulling player ID from roster' });
+        }
+    } catch (e) {
+        res.status(500).send({ message: 'An error occured while adding player to team roster' });
+    }
+}
+
 
 /** /team/:_id/changeName */
 //PATCH
 exports.modifyName = async function (req, res) {
-    //]ADD CHECK TO SEE IF NEW NAME FITS?
     try {
-        const updatedName = await Team.findByIdAndUpdate(req.params._id, { $set: { name: req.body.name } }, { new: true });
+        console.log(req.body);
+
+        const updatedName = await Team.findByIdAndUpdate(
+            { _id: req.params._id },
+            { $set: { name: req.body.name } }, 
+            { new: true, runValidators: true});
+
         if (updatedName)
             res.status(200).send(updatedName);
         else
@@ -81,6 +136,33 @@ exports.modifyName = async function (req, res) {
     }
 }
 
+
+exports.deleteTeam = async function (req, res) {
+    try {
+        const team = await Team.findById(req.params._id).populate('roster');
+
+        if (!team) return res.status(404).send({ message: 'Team cannot be found' })
+
+        if (!team.roster) return res.status(404).send({ message: 'Roster cannot be found' })
+
+        const rosterResult = await Player.deleteMany(
+            { _id: { $in: team.roster } }
+        );
+
+        const teamResult = await Team.findByIdAndDelete(req.params._id);
+
+        if (teamResult && rosterResult) {
+            return res.status(200).send('Successfully deleted team and its players');
+        } else {
+            return res.status(400).send({ message: 'Team Deletion Error' })
+        }
+    } catch (error) {
+        res.status(500).json(error);
+    }
+}
+
+
+// MAYBE DO ON FRONTEND/ EXTRA FEATURE
 /** /team/:_id/recentGames */
 //GET recent games
 /**
