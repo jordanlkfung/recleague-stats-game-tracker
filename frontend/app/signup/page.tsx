@@ -2,10 +2,10 @@
 import { useState } from 'react';
 import { useRouter } from "next/navigation";
 
-export default function signup() {
+export default function Signup() {
     const router = useRouter();
     const [email, setEmail] = useState("");
-    const [emailError, setEmailError] = useState<String>('');
+    const [emailError, setEmailError] = useState<string>('');
     const [password, setPassword] = useState("");
     const [confirmpassword, setConfirmPassword] = useState('')
     const [passwordsMatch, setPasswordsMatch] = useState(true);
@@ -28,6 +28,7 @@ export default function signup() {
                 }
             } catch (e) {
                 //ERROR SHOW SNACKBAR
+                console.error(e);
             }
 
         }
@@ -52,7 +53,7 @@ export default function signup() {
         disableSignUpButton();
     }
     const validEmail = () => {
-        let match = email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/);
+        const match = email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/);
         return !(match === null);
     }
     const disableSignUpButton = () => {

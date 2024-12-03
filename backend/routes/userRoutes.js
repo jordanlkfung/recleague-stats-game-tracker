@@ -6,6 +6,9 @@ router.route("")
     .post(controller.addUser)
     .get(controller.getAllUsers);
 
+router.route("/login")
+    .post(controller.login);
+
 router.route("/:_id")
     .get(controller.getUser);
 

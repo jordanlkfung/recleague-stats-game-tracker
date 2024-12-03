@@ -1,5 +1,7 @@
 var mongoose = require('mongoose');
-User = mongoose.model('User');
+const User = require('../models/User');
+const bcrypt = require('bcrypt');
+
 
 // req.params._id is the ObjectID of the User Document
 // Updating leagues needs the League's ObjectID in the request body (leagueId)
@@ -26,6 +28,34 @@ exports.getAllUsers = async function (req, res) {
         res.status(500).send({ message: 'An error has occured while getting all Users' });
     }
 }; // Test PASSED
+
+
+// POST Login
+exports.login = async function (req, res) {
+    const { email, password } = req.body;
+
+    try {
+        const user = await mongoose.model('User').findOne({ email });
+
+        console.log()
+
+        if (!user) {
+            return res.status(404).send({ message: 'User not found.' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(401).send({ message: 'Invalid email or password.' });
+        }
+
+        res.status(200).send({ message: 'Login successful', user: { _id: user._id, email: user.email } });
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).send({ message: 'An error has occurred' });
+    }
+};
+
 
 /** /user/:_id */
 // GET user by id 

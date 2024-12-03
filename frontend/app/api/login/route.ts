@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Helper function to handle errors
 const handleError = (message: string, status: number) => {
     return NextResponse.json({ message }, { status });
 };
 
-//POST - create a new user
+//POST - Log In
 export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, password } = body;
@@ -15,7 +14,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const response = await fetch(`${process.env.SERVER_HOST}/user`,
+        const response = await fetch(`${process.env.SERVER_HOST}/user/login`,
             {
                 method: 'POST',
                 headers: { 'Content-type': 'application/json' },
@@ -26,7 +25,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: errorData }, { status: response.status });
         }
         const data = await response.json();
-        return NextResponse.json(data, { status: 201 });
+        return NextResponse.json(data, { status: 200 });
     }
     catch (e) {
         console.error(e);
