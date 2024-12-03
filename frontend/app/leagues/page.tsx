@@ -1,23 +1,24 @@
-'use client'
+"use client"
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 
 interface League {
-  _id: String,
-  name: String,
-  sport: String,
+  _id: string,
+  name: string,
+  sport: string,
   seasons: Season[],
-  managers: String[]
+  managers: string[]
 }
 
 interface Season {
-  start_date: String,
-  end_date: String,
-  teams: String[],
-  games: String[]
+  start_date: string,
+  end_date: string,
+  teams: string[],
+  games: string[]
 }
-const leaugeView = (leagues: League[]) => {
+const LeaugeView = (leagues: League[]) => {
   const router = useRouter();
 
   return (
@@ -35,7 +36,7 @@ const leaugeView = (leagues: League[]) => {
       </thead>
       {leagues.map((league) => {
         return (
-          <tbody>
+          <tbody key={league._id}>
             <tr className='flex space-x-4 border border-spcaing-2'>
               <td className='w-1/5 text-center self-center'>{league.name}</td>
               <td className='w-1/5 text-center self-center'>{league.sport}</td>
@@ -107,7 +108,7 @@ export default function League() {
         }
       }
       catch (e) {
-
+        console.error("An error occurred while fetching all leagues:", e);
       }
     }
     const fetchUserLeagues = async () => {
@@ -123,10 +124,11 @@ export default function League() {
         setUserLeagues(data)
       }
       catch (e) {
-
+        console.error("An error occurred while fetching user leagues:", e);
       }
     }
     fetchAllLeagues();
+    fetchUserLeagues();
   }, []);
   return <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
     <div className="text-center">
@@ -140,7 +142,7 @@ export default function League() {
         View My Leagues
       </button>
     </div>
-    {view === "All Leagues" ? leaugeView(leagues) : leaugeView(userLeagues)}
+    {view === "All Leagues" ? LeaugeView(leagues) : LeaugeView(userLeagues)}
     <div className="absolute bottom-4 right-4">
       <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition">
         Create New League
