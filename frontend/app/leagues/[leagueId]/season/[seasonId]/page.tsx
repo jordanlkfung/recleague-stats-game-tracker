@@ -32,7 +32,16 @@ export default function season(props: data) {
 }
 
 export async function getServerSideProps() {
-    const request = await fetch('/api/league/season');
+    //GET getting all games 
+    const queryParams = new URLSearchParams({
+        _id: "leagueID",
+        _sid: "seasonID"
+    })
+    const request = await fetch(`/api/league/season/${queryParams.toString()}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+
+    });
     const data = request.json();
 
     return ({ props: data })
