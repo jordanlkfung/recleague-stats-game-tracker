@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 // GET - Get all leagues
 export async function GET() {
   try {
-    const response = await fetch(`${process.env.SERVER_HOST}/leagues`);
+    const response = await fetch(`${process.env.SERVER_HOST}/league`);
     if (!response.ok) {
       return handleError('Failed to fetch leagues', 500);
     }
