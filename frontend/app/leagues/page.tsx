@@ -43,7 +43,7 @@ const leaugeView = (leagues: League[]) => {
               <td className='w-1/5 text-center self-center'>{league.managers[0]}</td>
               <td className='w-1/12 text-center self-center'>4</td>
               {/** change join to view if user is already in league */}
-              <th className='w-1/5 text-center'><button className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg my-1" onClick={() => router.push(`/${league._id}`)}>View</button></th>
+              <th className='w-1/5 text-center'><button className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg my-1" onClick={() => router.push(`/leagues/${league._id}`)}>View</button></th>
             </tr>
 
           </tbody>
@@ -89,41 +89,45 @@ export default function League() {
   const [userLeagues, setUserLeagues] = useState([]);
   const [view, setView] = useState("All Leagues");
 
-  // useEffect(() => {
-  //   const fetchAllLeagues = async () => {
-  //     try {
-  //       const response = await fetch('/api/league', {
-  //         method: 'GET',
-  //         headers: { 'Content-Type': 'application/json' },
-  //       });
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         setAllLeagues(data);
-  //       }
-  //       else {
-  //         //ERROR
-  //       }
-  //     }
-  //     catch (e) {
+  useEffect(() => {
+    const fetchAllLeagues = async () => {
+      try {
+        const response = await fetch('api/leagues', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        console.log(response);
+        if (response.ok) {
+          const data = await response.json();
+          setAllLeagues(data);
+        }
+        else {
+          //ERROR
+          console.log("error fetch all nc")
+        }
+      }
+      catch (e) {
 
-  //     }
-  //   }
-  //   const fetchUserLeagues = async () => {
-  //     try {
-  //       const response = await fetch(`api/user`, {
-  //         method: 'GET',
-  //       });
-  //       if (!response.ok) {
-  //         //ERROR
-  //       }
-  //       const data = await response.json();
-  //       setUserLeagues(data)
-  //     }
-  //     catch (e) {
+      }
+    }
+    const fetchUserLeagues = async () => {
+      try {
+        const response = await fetch(`api/user`, {
+          method: 'GET',
+        });
+        if (!response.ok) {
+          //ERROR
+        }
+        console.log(response)
+        const data = await response.json();
+        setUserLeagues(data)
+      }
+      catch (e) {
 
-  //     }
-  //   }
-  // }, []);
+      }
+    }
+    fetchAllLeagues();
+  }, []);
   return <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
     <div className="text-center">
       <h1 className="text-6xl font-bold mb-4">Leagues</h1>
