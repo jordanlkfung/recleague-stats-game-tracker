@@ -20,7 +20,10 @@ export default function signup() {
                     body: JSON.stringify({ email, password })
                 });
 
-                if (response) {
+                if (!response.ok) {
+
+                }
+                else {
                     router.push("")
                 }
             } catch (e) {

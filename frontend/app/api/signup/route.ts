@@ -1,4 +1,3 @@
-import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Helper function to handle errors
@@ -6,6 +5,7 @@ const handleError = (message: string, status: number) => {
     return NextResponse.json({ message }, { status });
 };
 
+//POST - create a new user
 export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, password } = body;
