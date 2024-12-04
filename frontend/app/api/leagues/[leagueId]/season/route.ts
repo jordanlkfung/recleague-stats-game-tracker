@@ -4,7 +4,7 @@ const handleError = (message: string, status: number) => {
   return NextResponse.json({ message }, { status });
 };
 
-// GET - Get all managers
+// POST - Add Season
 export async function POST(req: Request, props: { params: Promise<{ leagueId: string }> }) {
     const params = await props.params;
     try {
