@@ -34,28 +34,18 @@ export async function POST(req: Request, props: { params: Promise<{ leagueId: st
     const params = await props.params;
     const body = await req.json();
     try {
+        console.log('called');
         const { seasonId, leagueId } = params;
         const { name } = body;
+
         if (!leagueId || !seasonId) {
             return handleError('LeagueID and Season ID is required', 400);
         }
-        const teamRes = await fetch(`${process.env.SERVER_HOST}/team`,
-            {
-                method: 'POST',
-                headers: { 'Content-type': 'application/json' },
-                body: JSON.stringify({ name })
-            })
-
-        if (!teamRes.ok)
-            return handleError('Failed to create team', 500);
-
-        const teamId = await teamRes.json();
-        const team = teamId._id
 
         const response = await fetch(`${process.env.SERVER_HOST}/league/${leagueId}/season/${seasonId}/team`, {
             method: 'POST',
-            headers: { 'Content=type': 'application/json' },
-            body: JSON.stringify({ team })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team: { name } })
         })
 
         if (!response.ok) {
@@ -65,6 +55,7 @@ export async function POST(req: Request, props: { params: Promise<{ leagueId: st
         return NextResponse.json(newTeam, { status: 200 });
     }
     catch (e) {
+        console.error(e);
         return handleError('Error occurred while creating team', 500);
     }
 }
