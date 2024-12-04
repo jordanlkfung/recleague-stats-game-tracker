@@ -40,3 +40,38 @@ export async function POST(req: Request, props: { params: Promise<{ leagueId: st
     }
 }
 
+// DELETE - Delete a season
+export async function DELETE(req: Request, props: { params: Promise<{ leagueId: string }> }) {
+    const params = await props.params;
+
+    try {
+        const body = await req.json();
+        const { seasonId } = body;
+
+        if (!seasonId) {
+            return handleError('Season ID is required', 400);
+        }
+
+        const { leagueId } = params;
+        if (!leagueId) {
+            return handleError('League ID is required', 400);
+        }
+
+        const response = await fetch(`${process.env.SERVER_HOST}/league/${leagueId}/season`, {
+            method: 'DELETE',
+            headers: { 'Content-type': 'application/json' },
+            body: JSON.stringify({ seasonId }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            return handleError(`Failed to delete season: ${error.message}`, response.status);
+        }
+
+        return NextResponse.json({ message: 'Season deleted successfully' }, { status: 200 });
+    } catch (error) {
+        console.error('Error deleting season:', error);
+        return handleError('Internal Server Error', 500);
+    }
+}
+
