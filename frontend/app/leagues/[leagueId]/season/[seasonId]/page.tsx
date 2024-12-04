@@ -1,5 +1,5 @@
 
-export default function season() {
+export default function Season() {
 
     const fetchStandings = async () => {
         try {

@@ -17,6 +17,11 @@ interface Season {
     games: string[];
 }
 
+interface User {
+    _id: string,
+    email: string,
+}
+
 const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US'); // Formats as MM/DD/YYYY
@@ -27,8 +32,17 @@ export default function LeagueID() {
     const router = useRouter();
     const { leagueId } = useParams();
     const [league, setLeague] = useState<League | null>(null);
+    const [userID, setUserID] = useState("");
+    const [managers, setManagers] = useState<User[]>([]);
+    const [isManager, setIsManager] = useState<boolean>(false);
 
     useEffect(() => {
+        const storedUser = sessionStorage.getItem('user');
+        if (storedUser) {
+            const result = JSON.parse(storedUser);
+            setUserID(result._id);
+        }
+
         const fetchLeague = async () => {
             try {
                 const response = await fetch(`/api/leagues/${leagueId}`, {
@@ -45,12 +59,42 @@ export default function LeagueID() {
                     console.error('Error fetching league by ID');
                 }
             } catch (error) {
-                console.error('An error occurred while fetching league:', error);
+                console.error('An error occurred while fetching league', error);
             }
         };
 
+        const fetchManagers = async () => {
+            try {
+                const response = await fetch(`/api/leagues/${leagueId}/manager`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    const data: User[] = await response.json();
+                    setManagers(data);
+                } else {
+                    console.error('Error fetching league by ID');
+                }
+            } catch (error) {
+                console.error('An error occurred while fetching managers', error);
+            }
+        }
+
+        if (!isManager && userID !== "" && managers.length > 0) {
+            const isUserManager = (userID: string, managers: User[]) => {
+                return managers.some(manager => manager._id === userID);
+            };
+    
+            setIsManager(isUserManager(userID, managers));
+        }
+
         fetchLeague();
-    }, [leagueId]);
+        fetchManagers();
+
+    }, [leagueId, userID, managers.length, isManager]);
 
     if (!league) {
         return <div className="text-white text-center">Loading...</div>;
@@ -94,11 +138,15 @@ export default function LeagueID() {
                     ))}
                 </tbody>
             </table>
-            <div className="absolute bottom-4 right-4">
-                <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition">
-                    Create New League
-                </button>
-            </div>
+            {userID !== null && userID !== "" && isManager ? (
+                <div className="absolute bottom-4 right-4">
+                    <button 
+                    className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition"
+                    onClick={() => router.push(`/leagues/${league._id}/season`)}>
+                        Add Season
+                    </button>
+                </div>
+            ) : null}
         </div>
     );
 }
