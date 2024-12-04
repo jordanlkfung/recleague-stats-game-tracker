@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const response = await fetch(`${process.env.SERVER_HOST}/leagues`, {
+    const response = await fetch(`${process.env.SERVER_HOST}/league`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

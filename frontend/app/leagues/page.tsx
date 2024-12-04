@@ -45,16 +45,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       return
     }
 
-    const response = await fetch('api/leagues', { method: 'POST' },);
+    const response = await fetch('api/leagues', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, sport })
+    },);
+    console.log(response);
+
     if (!response.ok) {
       setErrorMsg("Error occurred while create league, please try again");
-      return
     }
-
-    const league = response.json();
-
-    //GET id and push to [leagueId]
-    router.push(`leagues/${league}`);
   }
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
