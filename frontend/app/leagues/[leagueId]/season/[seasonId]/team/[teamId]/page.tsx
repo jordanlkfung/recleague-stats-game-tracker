@@ -13,19 +13,24 @@ interface roster {
     birthday: Date,
     sex: string,
     height: {
-        feet: Number,
-        inches: Number
+        feet: number,
+        inches: number
     },
-    weight: Number,
+    weight: number,
     position: string
 }
 interface Game {
     _id: string;
-    team1: string;
-    team2: string;
+    teams: [{
+        team: string,
+        score: number
+    }, {
+        team: string,
+        score: number
+    }],
     date: string;
     result: {
-        winnner: string,
+        winner: string,
         loser: string,
         tie: boolean
     };
@@ -81,10 +86,46 @@ export default function TeamView() {
     }
 
     useEffect(() => {
-        const dummyGames: Game[] = [
-            { _id: 'game1', team1: 'Team A', team2: 'Team B', date: '2022-10-22', result: '2-1' },
-            { _id: 'game2', team1: 'Team B', team2: 'Team C', date: '2022-10-23', result: '0-3' },
-            { _id: 'game3', team1: 'Team A', team2: 'Team C', date: '2022-10-24', result: '1-1' },
+        const gameData: Game[] = [
+            {
+                _id: "game1",
+                teams: [
+                    { team: "Team A", score: 3 },
+                    { team: "Team B", score: 1 }
+                ],
+                date: "2024-12-01",
+                result: {
+                    winner: "Team A",
+                    loser: "Team B",
+                    tie: false
+                }
+            },
+            {
+                _id: "game2",
+                teams: [
+                    { team: "Team C", score: 2 },
+                    { team: "Team D", score: 2 }
+                ],
+                date: "2024-12-02",
+                result: {
+                    winner: "",
+                    loser: "",
+                    tie: true
+                }
+            },
+            {
+                _id: "game3",
+                teams: [
+                    { team: "Team E", score: 5 },
+                    { team: "Team F", score: 3 }
+                ],
+                date: "2024-12-03",
+                result: {
+                    winner: "Team E",
+                    loser: "Team F",
+                    tie: false
+                }
+            }
         ];
 
         const rosterData: roster[] = [
@@ -125,8 +166,16 @@ export default function TeamView() {
                 position: "Goalkeeper"
             }
         ];
+        const team: team = {
+            _id: "test",
+            name: "team1",
+            roster: "test"
+        }
         setRoster(rosterData);
-        setGames(dummyGames);
+        setGames(gameData);
+        setTeam(
+            team
+        )
     }, [])
 
     const rosterView = () => {
@@ -157,7 +206,11 @@ export default function TeamView() {
             </table>
         )
     }
-
+    const displayResult = (game: Game) => {
+        const result: string = game.result.tie ? 'T ' : (game.result.winner === team?._id ? 'W ' : 'L ');
+        const score: string = game.teams[0].team === team?._id ? `${game.teams[0].score.toString()} - ${game.teams[1].score.toString()}` : `${game.teams[1].score} - ${game.teams[0].score.toString()}`;
+        return result + score;
+    }
     const gamesView = () => {
         return (
             <table className="table-auto w-10/12 mt-3 border border-gray-300 border-collapse">
@@ -172,9 +225,9 @@ export default function TeamView() {
                 <tbody>
                     {games.map((game) => (
                         <tr key={game._id} className="border-b border-gray-300 hover:bg-gray-800">
-                            <td className="w-1/5 text-center p-2 border-r border-gray-300">{game.team1 == team!.name ? game.team2 : game.team1}</td>
+                            <td className="w-1/5 text-center p-2 border-r border-gray-300">{game.teams[0].team == team!.name ? game.teams[0].team : game.teams[1].team}</td>
                             <td className="w-1/5 text-center p-2 border-r border-gray-300">{formatDate(game.date)}</td>
-                            <td className="w-1/5 text-center p-2 border-r border-gray-300">{game.result}</td>
+                            <td className="w-1/5 text-center p-2 border-r border-gray-300">{displayResult(game)}</td>
                             <td className="w-1/5 text-center p-2 border-r border-gray-300">
                                 <button
                                     className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
