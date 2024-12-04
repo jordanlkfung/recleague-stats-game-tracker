@@ -3,27 +3,27 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface Season {
-  _id: string;
-  start_date: string;
-  end_date: string;
+    _id: string;
+    start_date: string;
+    end_date: string;
 }
 
 interface Game {
     result: {
-      winner: string | null;
-      loser: string | null;
-      tie: boolean;
+        winner: string | null;
+        loser: string | null;
+        tie: boolean;
     };
     _id: string;
     date: string;
     time: string;
-    teams: TeamReference[]; 
+    teams: TeamReference[];
 }
-  
+
 
 interface Team {
-  _id: string;
-  name: string;
+    _id: string;
+    name: string;
 }
 
 interface TeamReference {
@@ -32,8 +32,8 @@ interface TeamReference {
 }
 
 const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US'); // Formats as MM/DD/YYYY
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US'); // Formats as MM/DD/YYYY
 };
 
 export default function SeasonDetails() {
@@ -42,6 +42,9 @@ export default function SeasonDetails() {
     const [season, setSeason] = useState<Season>();
     const [games, setGames] = useState<Game[]>([]);
     const [teams, setTeams] = useState<Team[]>([]);
+    const [modelOpen, setModelOpen] = useState(false);
+    const openModal = () => setModelOpen(true);
+    const closeModal = () => setModelOpen(false);
     const [activeTab, setActiveTab] = useState<'games' | 'teams'>('teams'); // To toggle between games and teams
 
     useEffect(() => {
@@ -99,28 +102,28 @@ export default function SeasonDetails() {
 
                     const gamesWithTeams = await Promise.all(
                         data.map(async (game) => {
-                        const teamsWithDetails = await Promise.all(
-                            game.teams.map(async (teamReference) => {
-                            const teamId = teamReference.team;
+                            const teamsWithDetails = await Promise.all(
+                                game.teams.map(async (teamReference) => {
+                                    const teamId = teamReference.team;
 
-                            const response = await fetch(`/api/teams/${teamId}`, {
-                                method: 'GET',
-                                headers: {
-                                'Content-Type': 'application/json',
-                                },
-                            });
+                                    const response = await fetch(`/api/teams/${teamId}`, {
+                                        method: 'GET',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                    });
 
-                            if (response.ok) {
-                                const teamData: Team = await response.json();
-                                return { ...teamReference, team: teamData.name };
-                            } else {
-                                console.error(`Error fetching team ${teamReference.team}`);
-                                return teamReference;
-                            }
-                            })
-                        );
+                                    if (response.ok) {
+                                        const teamData: Team = await response.json();
+                                        return { ...teamReference, team: teamData.name };
+                                    } else {
+                                        console.error(`Error fetching team ${teamReference.team}`);
+                                        return teamReference;
+                                    }
+                                })
+                            );
 
-                        return { ...game, teams: teamsWithDetails };
+                            return { ...game, teams: teamsWithDetails };
                         })
                     );
 
@@ -142,96 +145,170 @@ export default function SeasonDetails() {
         setActiveTab(tab);
     };
 
+    interface ModalProps {
+        isOpen: boolean;
+        onClose: () => void;
+    }
+    const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
+        if (!isOpen) return null;
+        const [name, setName] = useState("");
+        const [errorMsg, setErrorMsg] = useState("");
+
+
+        const createTeam = async () => {
+
+            const response = await fetch(`/api/leagues/${leagueId}/season/${seasonId}/team`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            },);
+
+
+            if (!response.ok) {
+                throw Error("");
+            }
+        }
+        const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+            setName(event.target.value);
+        }
+
+        return (
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+                <div className="bg-white p-8 rounded-xl w-1/3 flex items-center justify-center">
+                    <form className="grid grid-rows-1 gap-2">
+                        <label htmlFor="name" className="mb-0 text-blue-400">Team Name</label>
+                        <input
+                            type="text"
+                            className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
+                            name="name"
+                            id="name"
+                            value={name}
+                            onChange={handleNameChange}
+                            required
+                        />
+
+
+
+
+                        <div className="flex justify-center gap-4 mt-4">
+                            <button
+                                className="bg-red-700 text-white px-4 py-2 rounded-lg w-1/2"
+                                onClick={onClose}>
+                                Cancel
+                            </button>
+                            <button
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg w-1/2"
+                                onClick={createTeam}>
+                                Create
+                            </button>
+                        </div>
+                        {errorMsg && <div className="text-red-500 p-0 mb-0">{errorMsg}</div>}
+                    </form>
+
+                </div>
+            </div>
+        );
+
+    }
+
     if (!season) {
         return <div className="text-white text-center">Loading...</div>;
     }
 
     return (
         <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
-        <div className="text-center mb-4">
-            <h1 className="text-6xl font-bold">{`Season Details`}</h1>
-            <p className="mt-2 text-xl">
-            {`Start Date: ${formatDate(season.start_date)} - End Date: ${formatDate(season.end_date)}`}
-            </p>
-        </div>
+            <div className="text-center mb-4">
+                <h1 className="text-6xl font-bold">{`Season Details`}</h1>
+                <p className="mt-2 text-xl">
+                    {`Start Date: ${formatDate(season.start_date)} - End Date: ${formatDate(season.end_date)}`}
+                </p>
+            </div>
 
-        <div className="flex gap-4 mb-4">
-            <button
-            className={`px-6 py-3 ${activeTab === 'teams' ? 'bg-blue-600' : 'bg-gray-600'} hover:bg-blue-500 text-white font-semibold rounded-lg`}
-            onClick={() => handleTabClick('teams')}
-            >
-            Teams
-            </button>
-            <button
-            className={`px-6 py-3 ${activeTab === 'games' ? 'bg-blue-600' : 'bg-gray-600'} hover:bg-blue-500 text-white font-semibold rounded-lg`}
-            onClick={() => handleTabClick('games')}
-            >
-            Games
-            </button>
-        </div>
+            <div className="flex gap-4 mb-4">
+                <button
+                    className={`px-6 py-3 ${activeTab === 'teams' ? 'bg-blue-600' : 'bg-gray-600'} hover:bg-blue-500 text-white font-semibold rounded-lg`}
+                    onClick={() => handleTabClick('teams')}
+                >
+                    Teams
+                </button>
+                <button
+                    className={`px-6 py-3 ${activeTab === 'games' ? 'bg-blue-600' : 'bg-gray-600'} hover:bg-blue-500 text-white font-semibold rounded-lg`}
+                    onClick={() => handleTabClick('games')}
+                >
+                    Games
+                </button>
+            </div>
 
-        {activeTab === 'games' && (
-            <table className="table-auto w-10/12 mt-3 border border-gray-300 border-collapse">
-            <thead>
-                <tr className="bg-gray-700 text-white border-b border-gray-300">
-                <th className="w-1/4 p-2 border-r border-gray-300">Game</th>
-                <th className="w-1/4 p-2 border-r border-gray-300">Date</th>
-                <th className="w-1/4 p-2 border-r border-gray-300">Time</th>
-                <th className="w-1/4 p-2 border-r border-gray-300">Result</th>
-                <th className="w-1/4 p-2 border-r border-gray-300">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {games.map((game) => (
-                <tr key={game._id} className="border-b border-gray-300 hover:bg-gray-800">
-                    {game.teams.length === 2 ? (
-                        <td className="w-1/5 text-center p-2 border-r border-gray-300">{`${game.teams[0].team} vs ${game.teams[1].team}`}</td> // Needs to be game.teams[0].team.name team is not populated
-                    ): <td className="w-1/5 text-center p-2 border-r border-gray-300"></td>}
-                    <td className="w-1/5 text-center p-2 border-r border-gray-300">{formatDate(game.date)}</td>
-                    <td className="w-1/5 text-center p-2 border-r border-gray-300">{game.time}</td>
-                    {game.teams.length === 2 ? (
-                        <td className="w-1/5 text-center p-2 border-r border-gray-300">{`${game.teams[0].score} - ${game.teams[1].score}`}</td>
-                    ): <td className="w-1/5 text-center p-2 border-r border-gray-300"> 0 - 0</td>
-                    }
-                    <td className="w-1/5 text-center p-2 border-r border-gray-300">
-                    <button
-                        className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg" 
-                        onClick={() => router.push(`/leagues/${leagueId}/season/${seasonId}/game/${game._id}`)}
-                    >
-                        View
-                    </button>
-                    </td>
-                </tr>
-                ))}
-            </tbody>
-            </table>
-        )}
+            {activeTab === 'games' && (
+                <table className="table-auto w-10/12 mt-3 border border-gray-300 border-collapse">
+                    <thead>
+                        <tr className="bg-gray-700 text-white border-b border-gray-300">
+                            <th className="w-1/4 p-2 border-r border-gray-300">Game</th>
+                            <th className="w-1/4 p-2 border-r border-gray-300">Date</th>
+                            <th className="w-1/4 p-2 border-r border-gray-300">Time</th>
+                            <th className="w-1/4 p-2 border-r border-gray-300">Result</th>
+                            <th className="w-1/4 p-2 border-r border-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {games.map((game) => (
+                            <tr key={game._id} className="border-b border-gray-300 hover:bg-gray-800">
+                                {game.teams.length === 2 ? (
+                                    <td className="w-1/5 text-center p-2 border-r border-gray-300">{`${game.teams[0].team} vs ${game.teams[1].team}`}</td> // Needs to be game.teams[0].team.name team is not populated
+                                ) : <td className="w-1/5 text-center p-2 border-r border-gray-300"></td>}
+                                <td className="w-1/5 text-center p-2 border-r border-gray-300">{formatDate(game.date)}</td>
+                                <td className="w-1/5 text-center p-2 border-r border-gray-300">{game.time}</td>
+                                {game.teams.length === 2 ? (
+                                    <td className="w-1/5 text-center p-2 border-r border-gray-300">{`${game.teams[0].score} - ${game.teams[1].score}`}</td>
+                                ) : <td className="w-1/5 text-center p-2 border-r border-gray-300"> 0 - 0</td>
+                                }
+                                <td className="w-1/5 text-center p-2 border-r border-gray-300">
+                                    <button
+                                        className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
+                                        onClick={() => router.push(`/leagues/${leagueId}/season/${seasonId}/game/${game._id}`)}
+                                    >
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
 
-        {activeTab === 'teams' && (
-            <table className="table-auto w-10/12 mt-3 border border-gray-300 border-collapse">
-            <thead>
-                <tr className="bg-gray-700 text-white border-b border-gray-300">
-                <th className="w-1/3 p-2 border-r border-gray-300">Team Name</th>
-                <th className="w-1/3 p-2 border-r border-gray-300">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {teams.map((team) => (
-                <tr key={team._id} className="border-b border-gray-300 hover:bg-gray-800">
-                    <td className="w-1/5 text-center p-2 border-r border-gray-300">{team.name}</td>
-                    <td className="w-1/5 text-center p-2 border-r border-gray-300">
-                    <button
-                        className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
-                        onClick={() => router.push(`/leagues/${leagueId}/season/${seasonId}/team/${team._id}`)}
-                    >
-                        View
-                    </button>
-                    </td>
-                </tr>
-                ))}
-            </tbody>
-            </table>
-        )}
+            {activeTab === 'teams' && (
+                <table className="table-auto w-10/12 mt-3 border border-gray-300 border-collapse">
+                    <thead>
+                        <tr className="bg-gray-700 text-white border-b border-gray-300">
+                            <th className="w-1/3 p-2 border-r border-gray-300">Team Name</th>
+                            <th className="w-1/3 p-2 border-r border-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {teams.map((team) => (
+                            <tr key={team._id} className="border-b border-gray-300 hover:bg-gray-800">
+                                <td className="w-1/5 text-center p-2 border-r border-gray-300">{team.name}</td>
+                                <td className="w-1/5 text-center p-2 border-r border-gray-300">
+                                    <button
+                                        className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
+                                        onClick={() => router.push(`/leagues/${leagueId}/season/${seasonId}/team/${team._id}`)}
+                                    >
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+
+            {activeTab === 'teams' && <div className="absolute bottom-4 right-4">
+                <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition" onClick={openModal}>
+                    Add Team
+                </button>
+                <Modal isOpen={modelOpen} onClose={closeModal} />
+
+            </div>}
         </div>
     );
 }

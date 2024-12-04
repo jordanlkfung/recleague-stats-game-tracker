@@ -358,13 +358,14 @@ export default function TeamView() {
                 </button>
             </div>
             {gameView ? gamesView() : rosterView()}
-            <div className="absolute bottom-4 right-4">
+            {!gameView && <div className="absolute bottom-4 right-4">
                 <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition" onClick={openModal}>
                     Add Player
                 </button>
                 <Modal isOpen={modelOpen} onClose={closeModal} />
 
-            </div>
+            </div>}
         </div>
+
     )
 }
