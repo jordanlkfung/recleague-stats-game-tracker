@@ -11,6 +11,7 @@ interface League {
 }
 
 interface Season {
+    _id: string,
     start_date: string;
     end_date: string;
     teams: string[];
@@ -27,7 +28,6 @@ const formatDate = (dateString: string): string => {
     return date.toLocaleDateString('en-US'); // Formats as MM/DD/YYYY
 };
 
-
 export default function LeagueID() {
     const router = useRouter();
     const { leagueId } = useParams();
@@ -35,6 +35,7 @@ export default function LeagueID() {
     const [userID, setUserID] = useState("");
     const [managers, setManagers] = useState<User[]>([]);
     const [isManager, setIsManager] = useState<boolean>(false);
+    const [checkedSeasons, setCheckedSeasons] = useState<string[]>([]);
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem('user');
@@ -96,6 +97,49 @@ export default function LeagueID() {
 
     }, [leagueId, userID, managers.length, isManager]);
 
+    const handleCheckboxChange = (seasonId: string, checked: boolean) => {
+        setCheckedSeasons(prev =>
+            checked ? [...prev, seasonId] : prev.filter(id => id !== seasonId)
+        );
+    };
+
+    const handleDeleteSeasons = async () => {
+        if (checkedSeasons.length === 0) {
+            alert("No seasons selected for deletion.");
+            return;
+        }
+    
+        try {
+            const confirmDelete = confirm(
+                `Are you sure you want to delete the selected ${checkedSeasons.length} season(s)?`
+            );
+            if (!confirmDelete) return;
+    
+            for (const seasonId of checkedSeasons) {
+                const response = await fetch(`/api/leagues/${leagueId}/season`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ seasonId }), 
+                });
+    
+                if (!response.ok) {
+                    const error = await response.json();
+                    console.error(`Error deleting season with ID ${seasonId}:`, error.message);
+                    alert(`Error deleting season ${seasonId}: ${error.message}`);
+                }
+            }
+    
+            alert("Selected seasons deleted successfully!");
+            window.location.reload(); 
+        } catch (error) {
+            console.error("An error occurred while deleting seasons", error);
+            alert("Failed to delete seasons. Please try again later.");
+        }
+    };
+    
+
     if (!league) {
         return <div className="text-white text-center">Loading...</div>;
     }
@@ -120,7 +164,13 @@ export default function LeagueID() {
                     {league.seasons.map((season, index) => (
                         <tr key={index} className="border-b border-gray-300 hover:bg-gray-800">
                             <td className="w-1/12 p-2 text-center border-r border-gray-300">
-                                <input type="checkbox" />
+                                <input 
+                                    type="checkbox" 
+                                    checked={checkedSeasons.includes(season._id)}
+                                    onChange={e => {
+                                        handleCheckboxChange(season._id,(e.target as HTMLInputElement).checked);
+                                    }}
+                                />
                             </td>
                             <td className="w-1/5 text-center p-2 border-r border-gray-300">{index + 1}</td>
                             <td className="w-1/5 text-center p-2 border-r border-gray-300">{formatDate(season.start_date)}</td>
@@ -139,11 +189,23 @@ export default function LeagueID() {
                 </tbody>
             </table>
             {userID !== null && userID !== "" && isManager ? (
-                <div className="absolute bottom-4 right-4">
+                <div className="absolute bottom-4 right-4 flex gap-4">
+                    <button
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-md transition"
+                    >
+                        Add Manager
+                    </button>
                     <button 
                     className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition"
                     onClick={() => router.push(`/leagues/${league._id}/season`)}>
                         Add Season
+                    </button>
+
+                    <button
+                        className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg shadow-md transition"
+                        onClick={handleDeleteSeasons}
+                    >
+                        Delete Season
                     </button>
                 </div>
             ) : null}
