@@ -1,17 +1,37 @@
 'use client'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react';
-type Params = {
-    leagueId: string;  // Define the type for the dynamic route parameter
-};
+import { useRouter, useParams } from 'next/navigation'
+import { useEffect, useState } from 'react';
 
-interface LeaguePageProps {
-    params: Params;
-}
-export default function leagueID({ params }: LeaguePageProps) {
+export default function LeagueID() {
     const router = useRouter();
+    const { leagueId } = useParams();
+    const [league, setLeague] = useState([]);
 
-    const { leagueId } = params;
+    useEffect(() => {
+        const fetchLeague = async () => {
+            try {
+                const response = await fetch(`/api/leagues/${leagueId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setLeague(data);
+                    console.log(league);
+                } else {
+                    console.error('Error getting league by ID');
+                }
+            } catch (error) {
+                console.error("An error occurred while fetching getting league:", error);
+            }
+        }
+
+        fetchLeague();
+    }, [league, leagueId]);
+
     return <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
         <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
             <div className="text-center">
