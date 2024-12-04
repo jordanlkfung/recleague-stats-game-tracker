@@ -114,14 +114,17 @@ export default function TeamView() {
         const [weight, setWeight] = useState("");
         const [inches, setInches] = useState("");
         const [feet, setFeet] = useState('');
+        const [birthdate, setBirthdate] = useState("");
         const [errorMsg, setErrorMsg] = useState("");
+        const handleBirthdateChange = (event: React.ChangeEvent<HTMLInputElement>) => setBirthdate(event.target.value); // Handle birthdate input change
+
 
         const createPlayer = async () => {
 
-            const response = await fetch('api/leagues', {
+            const response = await fetch(`/api/teams/${teamId}/roster`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, sex, position, weight, height: { inches, feet } })
+                body: JSON.stringify({ name, sex, position, weight, height: { inches, feet }, birthdate })
             },);
 
 
@@ -201,6 +204,17 @@ export default function TeamView() {
                                 required
                             />
                         </div>
+                        <div>
+                            <label htmlFor="birthdate" className="block text-blue-400">Birthdate</label>
+                            <input
+                                type="date"
+                                id="birthdate"
+                                value={birthdate}
+                                onChange={handleBirthdateChange}
+                                className="w-full p-3 border-2 border-blue-500 text-black rounded-md outline-none focus:ring-2 focus:ring-blue-400"
+                                required
+                            />
+                        </div>
                         <label htmlFor="sex" className="mb-0 text-blue-400">Sex</label>
                         <div className="relative inline-block text-center">
                             <div className="relative group">
@@ -248,7 +262,7 @@ export default function TeamView() {
                             </button>
                             <button
                                 className="bg-blue-500 text-white px-4 py-2 rounded-lg w-1/2"
-                                onClick={() => { }}>
+                                onClick={createPlayer}>
                                 Create
                             </button>
                         </div>
