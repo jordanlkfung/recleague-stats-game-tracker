@@ -6,7 +6,8 @@ const handleError = (message: string, status: number) => {
 };
 
 // GET - Get all leagues
-export async function GET(request: Request, { params }: { params: { leagueId: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ leagueId: string }> }) {
+    const params = await props.params;
     try {
         const { leagueId } = params
         if (!leagueId) {

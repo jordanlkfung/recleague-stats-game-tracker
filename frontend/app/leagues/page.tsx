@@ -24,23 +24,30 @@ const LeaugeView = (leagues: League[]) => {
 
   return (
 
-    <table className='table table-fixed w-[40%] mt-3 border-seperate border border-spacing-2'>
+    <table className='table-auto w-10/12 mt-3 border border-gray-300 border-collapse'>
       <thead>
-        <tr className='flex space-x-4 border border-spacing-2'>
-          <th className='w-1/5 text-center self-center'>League Name</th>
-          <th className='w-1/5 text-center self-center'>Sport</th>
-          <th className='w-1/5 text-center self-center'>Seasons</th>
-          <th className='w-1/5 text-center self-center'></th>
+        <tr className='bg-gray-700 text-white border-b border-gray-300'>
+          <th className='w-1/12 p-2 border-r border-gray-300'>League Name</th>
+          <th className='w-1/12 p-2 border-r border-gray-300'>Sport</th>
+          <th className='w-1/12 p-2 border-r border-gray-300'>Seasons</th>
+          <th className='w-1/12 p-2 border-r border-gray-300'></th>
         </tr>
       </thead>
       {leagues.map((league) => {
         return (
           <tbody key={league._id}>
-            <tr className='flex space-x-4 border border-spcaing-2'>
-              <td className='w-1/5 text-center self-center'>{league.name}</td>
-              <td className='w-1/5 text-center self-center'>{league.sport}</td>
-              <td className='w-1/5 text-center self-center'>{league.seasons.length}</td>
-              <th className='w-1/5 text-center'><button className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg my-1" onClick={() => router.push(`/leagues/${league._id}`)}>View</button></th>
+            <tr className='border-b border-gray-300 hover:bg-gray-800'>
+              <td className='w-1/5 text-center p-2 border-r border-gray-300'>{league.name}</td>
+              <td className='w-1/5 text-center p-2 border-r border-gray-300'>{league.sport}</td>
+              <td className='w-1/5 text-center p-2 border-r border-gray-300'>{league.seasons.length}</td>
+              <td className="w-1/5 text-center p-2">
+                <button
+                  className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
+                  onClick={() => router.push(`/leagues/${league._id}`)}
+                >
+                  View
+                </button>
+              </td>
             </tr>
 
           </tbody>
