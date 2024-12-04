@@ -28,7 +28,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const [sport, setSport] = useState<string>("Select Sport");
   const [name, setName] = useState("");
   const [errorMsg, setErrorMsg] = useState<string>('');
-  const router = useRouter();
 
   const handleLeagueNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setName(event.target.value);
