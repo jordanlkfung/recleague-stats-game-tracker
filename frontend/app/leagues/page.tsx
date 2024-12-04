@@ -148,9 +148,9 @@ const LeaugeView = (leagues: League[]) => {
           <th className='w-1/12 p-2 border-r border-gray-300'></th>
         </tr>
       </thead>
-      {leagues.map((league) => {
+      {leagues.map((league, index) => {
         return (
-          <tbody key={league._id}>
+          <tbody key={index}>
             <tr className='border-b border-gray-300 hover:bg-gray-800'>
               <td className='w-1/5 text-center p-2 border-r border-gray-300'>{league.name}</td>
               <td className='w-1/5 text-center p-2 border-r border-gray-300'>{league.sport}</td>
