@@ -59,19 +59,59 @@ interface TeamStats {
   points: number;
 }
 
+interface User {
+  _id: string,
+  email: string,
+}
+
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US'); // Formats as MM/DD/YYYY
 };
 
 export default function GameDetails() {
-  const { gameId } = useParams();
+  const { leagueId, gameId } = useParams();
   const [game, setGame] = useState<Game | null>(null);
   const [teams, setTeams] = useState<(Team | null)[]>([null, null]);
   const [t1Stats, setT1Stats] = useState<TeamStats[]>([]);
   const [t2Stats, setT2Stats] = useState<TeamStats[]>([]);
 
+  const [userID, setUserID] = useState("");
+  const [managers, setManagers] = useState<User[]>([]);
+  const [isManager, setIsManager] = useState<boolean>(false);
+
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [players, setPlayers] = useState<TeamStats[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState('');
+
   useEffect(() => {
+    const storedUser = sessionStorage.getItem('user');
+    if (storedUser) {
+        const result = JSON.parse(storedUser);
+        setUserID(result._id);
+    }
+
+    const fetchManagers = async () => {
+      try {
+          const response = await fetch(`/api/leagues/${leagueId}/manager`, {
+              method: 'GET',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+          });
+
+          if (response.ok) {
+              const data: User[] = await response.json();
+              setManagers(data);
+          } else {
+              console.error('Error fetching league by ID');
+          }
+      } catch (error) {
+          console.error('An error occurred while fetching managers', error);
+      }
+  }
+
     const fetchGame = async () => {
       try {
         const response = await fetch(`/api/games/${gameId}`, {
@@ -103,8 +143,9 @@ export default function GameDetails() {
       }
     };
 
+    fetchManagers();
     fetchGame();
-  }, [gameId]);
+  }, [gameId, leagueId]);
 
   useEffect(() => {
     if (game && teams[0] && teams[0].roster) {
@@ -128,8 +169,46 @@ export default function GameDetails() {
         });
       });
     }
-  }, [game, teams]);
 
+    if (!isManager && userID !== "" && managers.length > 0) {
+      const isUserManager = (userID: string, managers: User[]) => {
+          return managers.some(manager => manager._id === userID);
+      };
+
+      setIsManager(isUserManager(userID, managers));
+    }
+
+    if (selectedTeam) {
+      if (teams[0] && teams[1]) {
+          if (selectedTeam === teams[0].name && t1Stats) {
+            setPlayers(t1Stats);
+          } 
+          else if (selectedTeam === teams[1].name && t2Stats) {
+            setPlayers(t2Stats);
+          }
+      }
+    }
+  }, [game, isManager, managers, teams, userID]);
+
+  useEffect(() => {
+    if (selectedTeam) {
+      if (teams[0] && teams[1]) {
+          if (selectedTeam === teams[0].name && t1Stats) {
+            setPlayers(t1Stats);
+          } 
+          else if (selectedTeam === teams[1].name && t2Stats) {
+            setPlayers(t2Stats);
+          }
+      }
+    }
+  }, [selectedTeam, t1Stats, t2Stats, teams]);
+
+  const handleGameStat = async () => {
+    
+  };
+
+  if (selectedTeam !== "") console.log(players)
+  
   if (!game) {
     return <div className="text-white text-center">Loading...</div>;
   }
@@ -175,8 +254,8 @@ export default function GameDetails() {
             </thead>
             <tbody>
               {t1Stats.length > 0 ? (
-                t1Stats.map((player) => (
-                  <tr key={player.player} className="border-b border-gray-300 hover:bg-gray-800">
+                t1Stats.map((player, index) => (
+                  <tr key={index} className="border-b border-gray-300 hover:bg-gray-800">
                     <td className="text-center p-2 border-r border-gray-300">{player.name}</td>
                     <td className="text-center p-2 border-r border-gray-300">{player.min}</td>
                     <td className="text-center p-2 border-r border-gray-300">{player.fgm}</td>
@@ -228,8 +307,8 @@ export default function GameDetails() {
             </thead>
             <tbody>
               {t2Stats.length > 0 ? (
-                t2Stats.map((player) => (
-                  <tr key={player.player} className="border-b border-gray-300 hover:bg-gray-800">
+                t2Stats.map((player, index) => (
+                  <tr key={index} className="border-b border-gray-300 hover:bg-gray-800">
                     <td className="text-center p-2 border-r border-gray-300">{player.player}</td>
                     <td className="text-center p-2 border-r border-gray-300">{player.min}</td>
                     <td className="text-center p-2 border-r border-gray-300">{player.fgm}</td>
@@ -256,6 +335,75 @@ export default function GameDetails() {
           </table>
         </div>
       </div>
+      {isPopupOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white text-black p-6 rounded shadow-lg max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4">Game Stat Update</h2>
+            <p className="mb-4">Select a team to update the game stat:</p>
+            
+            <select
+              value={selectedTeam}
+              onChange={(e) => setSelectedTeam(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
+            >
+              <option value="" disabled>
+                Select a team
+              </option>
+              {teams.map((team, index) =>
+                team ? ( 
+                  <option key={index} value={team.name}>
+                    {team.name}
+                  </option>
+                ) : null 
+              )}
+            </select>
+
+            {selectedTeam && players.length > 0 && (
+            <>
+              <p className="mb-4">Select a player to update the game stat:</p>
+              <select
+                value={selectedPlayer}
+                onChange={(e) => setSelectedPlayer(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
+              >
+                <option value="" disabled>
+                  Select a player
+                </option>
+                {players.map((player, index) => (
+                  <option key={index} value={player.name}>
+                    {player.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
+            <button
+              onClick={handleGameStat}
+              className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+              disabled={!selectedTeam} 
+            >
+              Submit
+            </button>
+            <button
+              onClick={() => setIsPopupOpen(false)}
+              className="bg-gray-500 text-white px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {userID !== null && userID !== "" && isManager ? (
+        <div className="absolute bottom-4 right-4 flex gap-4">
+          <button
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-md transition"
+            onClick={() => setIsPopupOpen(true)}
+          >
+            Edit
+          </button>
+        </div>
+      ) : null} 
     </div>
   );
 }
