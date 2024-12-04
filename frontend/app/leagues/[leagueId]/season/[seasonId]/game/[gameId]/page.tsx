@@ -153,7 +153,11 @@ export default function GameDetails() {
         game.stat.map((statPlayer) => {
           if (player._id === statPlayer.player) {
             const newObj = { name: player.name, ... statPlayer }
-            setT1Stats((prevStats) => [...prevStats, newObj]);
+            const p1Exists = t1Stats.some((stat) => {
+              return stat.player === statPlayer.player;
+            });
+            
+            if (!p1Exists) setT1Stats((prevStats) => [...prevStats, newObj]);
           }
         });
       });
@@ -164,7 +168,10 @@ export default function GameDetails() {
         game.stat.map((statPlayer) => {
           if (player._id === statPlayer.player) {
             const newObj = { name: player.name, ... statPlayer }
-            setT2Stats((prevStats) => [...prevStats, newObj]);
+            const p2Exists = t2Stats.some((stat) => {
+              return stat.player === statPlayer.player;
+            });
+            if (!p2Exists) setT2Stats((prevStats) => [...prevStats, newObj]);
           }
         });
       });
@@ -176,17 +183,6 @@ export default function GameDetails() {
       };
 
       setIsManager(isUserManager(userID, managers));
-    }
-
-    if (selectedTeam) {
-      if (teams[0] && teams[1]) {
-          if (selectedTeam === teams[0].name && t1Stats) {
-            setPlayers(t1Stats);
-          } 
-          else if (selectedTeam === teams[1].name && t2Stats) {
-            setPlayers(t2Stats);
-          }
-      }
     }
   }, [game, isManager, managers, teams, userID]);
 
@@ -202,6 +198,8 @@ export default function GameDetails() {
       }
     }
   }, [selectedTeam, t1Stats, t2Stats, teams]);
+
+  console.log(t1Stats)
 
   const handleGameStat = async () => {
     
