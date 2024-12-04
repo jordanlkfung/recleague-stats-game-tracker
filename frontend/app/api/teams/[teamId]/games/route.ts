@@ -14,7 +14,7 @@ export async function GET(request: Request, props: { params: Promise<{ teamId: s
         }
 
         console.log(teamId);
-        const response = await fetch(`${process.env.SERVER_HOST}/team/${teamId}/games`);
+        const response = await fetch(`${process.env.SERVER_HOST}/game/team/${teamId}`);
         if (!response.ok) {
             return handleError('Failed to fetch games', 500);
         }

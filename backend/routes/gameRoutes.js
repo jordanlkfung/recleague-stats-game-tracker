@@ -24,4 +24,7 @@ router.route("/:_id/setResult").
 
 router.route("/:_id/updateStat").
     patch(controller.updateStats);
+
+router.route("/team/:_id").
+    get(controller.getTeamGames)
 module.exports = router;

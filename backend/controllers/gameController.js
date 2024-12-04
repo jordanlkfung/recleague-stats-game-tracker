@@ -12,13 +12,13 @@ exports.newGame = async function (req, res) {
         try {
             console.log('Game is Basketball');
             const game = new Basketball(req.body);
-    
-            if (!game) return res.status(500).json({ message: 'Create basketball game error.'  });
+
+            if (!game) return res.status(500).json({ message: 'Create basketball game error.' });
             console.log("Created game: ", game);
 
             console.log('Saving game');
             const newGame = await game.save();
-            if (!newGame) return res.status(500).json({ message: 'Saving basketball game error.'  });
+            if (!newGame) return res.status(500).json({ message: 'Saving basketball game error.' });
 
             return res.status(201).json(newGame);
         }
@@ -188,18 +188,18 @@ exports.changeTeam = async function (req, res) {
             if (addExists.length > 0) return res.status(400).send({ message: 'Team exists already' });
 
             addResult = await Game.updateOne(
-                { _id: gameID }, 
+                { _id: gameID },
                 { $push: { 'teams': { team: teamAdd._id } } }
             );
-        } 
+        }
 
 
         if (teamRemove) {
             removeResult = await Game.updateOne(
-                { _id: gameID }, 
+                { _id: gameID },
                 { $pull: { 'teams': { team: teamRemove._id } } }
             );
-        } 
+        }
 
 
         const result = {
@@ -259,17 +259,17 @@ exports.updateStats = async function (req, res) {
 
     try {
         const game = await Game.findById(gameID);
-        
+
         if (!game) {
             return res.status(404).send({ message: "Game not found" });
         }
 
-        const sport = game.sport;  
+        const sport = game.sport;
         let validKeys = [];
-  
+
         if (sport === 'Basketball') {
             validKeys = [
-                'min', 'fgm', 'fga', 'threeptm', 'threeptsa', 'ftm', 'fta', 
+                'min', 'fgm', 'fga', 'threeptm', 'threeptsa', 'ftm', 'fta',
                 'rebounds', 'assists', 'blocks', 'steals', 'pf', 'to', 'points'
             ];
         }
@@ -295,7 +295,7 @@ exports.updateStats = async function (req, res) {
             const newStat = {
                 ...statUpdates
             };
-            
+
             game.stat.push(newStat);
         } else {
             for (let key in statUpdates) {
@@ -317,3 +317,20 @@ exports.updateStats = async function (req, res) {
 };
 
 
+//GET
+/** /game/team/:_id */
+exports.getTeamGames = async function (req, res) {
+    const teamId = req.params._id;
+
+    try {
+        const games = await Game.find({ 'teams.team': teamId }).populate('teams.team').populate('result.winner').populate('result.loser');
+
+        if (!games)
+            return res.status(404).send({ message: "No games found" });
+
+        return res.status(200).send(games);
+    }
+    catch (e) {
+        return res.status(500).send({ message: "An error occurred while getting team games" })
+    }
+}
