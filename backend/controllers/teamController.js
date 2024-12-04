@@ -28,7 +28,7 @@ exports.addTeam = async function (req, res) {
 
 exports.getTeamByID = async function (req, res) {
     try {
-        const team = await Team.findById(req.params._id);
+        const team = await Team.findById(req.params._id).populate('roster');
         res.status(200).send(team);
     }
     catch (e) {
