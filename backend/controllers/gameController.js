@@ -291,8 +291,12 @@ exports.updateStats = async function (req, res) {
             }
         }
 
+        console.log(playerStat)
+
+
         if (!playerStat) {
             const newStat = {
+                player: playerId,
                 ...statUpdates
             };
 
