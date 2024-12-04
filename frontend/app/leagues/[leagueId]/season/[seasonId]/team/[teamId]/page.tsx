@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 interface team {
     _id: string,
     name: string,
-    roster: string
 }
 interface roster {
     _id: string,
@@ -30,8 +29,8 @@ interface Game {
     }],
     date: string;
     result: {
-        winner: string,
-        loser: string,
+        winner: string | null,
+        loser: string | null,
         tie: boolean
     };
 }
@@ -47,7 +46,7 @@ export default function TeamView() {
     const [roster, setRoster] = useState<roster[] | null>(null);
     const [games, setGames] = useState<Game[]>([]);
     const fetchTeam = async () => {
-        const response = await fetch(`api/team/${teamId}`, {
+        const response = await fetch(`api/teams/${teamId}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         }
@@ -61,7 +60,7 @@ export default function TeamView() {
     }
 
     const fetchRoster = async () => {
-        const response = await fetch(`api/team/${teamId}/roster`, {
+        const response = await fetch(`api/teams/${teamId}/roster`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         })
@@ -169,9 +168,9 @@ export default function TeamView() {
         const team: team = {
             _id: "test",
             name: "team1",
-            roster: "test"
         }
-        setRoster(rosterData);
+        // setRoster(rosterData);
+        fetchRoster();
         setGames(gameData);
         setTeam(
             team
@@ -207,9 +206,13 @@ export default function TeamView() {
         )
     }
     const displayResult = (game: Game) => {
-        const result: string = game.result.tie ? 'T ' : (game.result.winner === team?._id ? 'W ' : 'L ');
+        const result = game.result.tie ? <span>T </span> : (game.result.winner === team?._id ? <span className="text-green-500">W </span> : <span className="text-red-500">L </span>);
         const score: string = game.teams[0].team === team?._id ? `${game.teams[0].score.toString()} - ${game.teams[1].score.toString()}` : `${game.teams[1].score} - ${game.teams[0].score.toString()}`;
-        return result + score;
+        return <td className="w-1/5 text-center p-2 border-r border-gray-300">
+            {result}
+            <span>{score}</span>
+        </td>
+
     }
     const gamesView = () => {
         return (
@@ -219,7 +222,7 @@ export default function TeamView() {
                         <th className="w-1/4 p-2 border-r border-gray-300">Opponent</th>
                         <th className="w-1/4 p-2 border-r border-gray-300">Date</th>
                         <th className="w-1/4 p-2 border-r border-gray-300">Result</th>
-                        <th className="w-1/4 p-2 border-r border-gray-300">Actions</th>
+                        <th className="w-1/4 p-2 border-r border-gray-300">Stats</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -227,7 +230,7 @@ export default function TeamView() {
                         <tr key={game._id} className="border-b border-gray-300 hover:bg-gray-800">
                             <td className="w-1/5 text-center p-2 border-r border-gray-300">{game.teams[0].team == team!.name ? game.teams[0].team : game.teams[1].team}</td>
                             <td className="w-1/5 text-center p-2 border-r border-gray-300">{formatDate(game.date)}</td>
-                            <td className="w-1/5 text-center p-2 border-r border-gray-300">{displayResult(game)}</td>
+                            {displayResult(game)}
                             <td className="w-1/5 text-center p-2 border-r border-gray-300">
                                 <button
                                     className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
