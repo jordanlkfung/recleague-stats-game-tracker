@@ -11,16 +11,29 @@ interface Season {
 }
 
 interface Game {
-  _id: string;
-  team1: string;
-  team2: string;
-  date: string;
-  result: string;
+    result: {
+      winner: string | null;
+      loser: string | null;
+      tie: boolean;
+    };
+    _id: string;
+    sport: string;
+    date: string;
+    time: string;
+    type: string;
+    stat: any[]; 
+    teams: TeamReference[]; 
 }
+  
 
 interface Team {
   _id: string;
   name: string;
+}
+
+interface TeamReference {
+    team: string;
+    score: number;
 }
 
 const formatDate = (dateString: string): string => {
@@ -56,6 +69,56 @@ export default function SeasonDetails() {
                 console.error('An error occurred while fetching managers', error);
             }
         }
+
+        const fetchGames = async () => {
+            try {
+                const response = await fetch(`/api/leagues/${leagueId}/season/${seasonId}/game`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    const data: Game[] = await response.json();
+
+                    const gamesWithTeams = await Promise.all(
+                        data.map(async (game) => {
+                        const teamsWithDetails = await Promise.all(
+                            game.teams.map(async (teamReference) => {
+                            const teamId = teamReference.team;
+
+                            const response = await fetch(`/api/teams/${teamId}`, {
+                                method: 'GET',
+                                headers: {
+                                'Content-Type': 'application/json',
+                                },
+                            });
+
+                            if (response.ok) {
+                                const teamData: Team = await response.json();
+                                return { ...teamReference, team: teamData.name };
+                            } else {
+                                console.error(`Error fetching team ${teamReference.team}`);
+                                return teamReference;
+                            }
+                            })
+                        );
+
+                        return { ...game, teams: teamsWithDetails };
+                        })
+                    );
+
+                    setGames(gamesWithTeams);
+                } else {
+                    console.error('Error fetching games');
+                }
+            } catch (error) {
+                console.error('An error occurred while fetching games', error);
+            }
+        }
+
+        fetchGames();
         // Dummy data for season details
         const dummySeason: Season = {
         _id: '674fe27b4485f216c24a0327',
@@ -65,12 +128,6 @@ export default function SeasonDetails() {
         games: ['game1', 'game2', 'game3'],
         };
 
-        const dummyGames: Game[] = [
-        { _id: 'game1', team1: 'Team A', team2: 'Team B', date: '2022-10-22', result: '2-1' },
-        { _id: 'game2', team1: 'Team B', team2: 'Team C', date: '2022-10-23', result: '0-3' },
-        { _id: 'game3', team1: 'Team A', team2: 'Team C', date: '2022-10-24', result: '1-1' },
-        ];
-
         const dummyTeams: Team[] = [
         { _id: 'team1', name: 'Team A' },
         { _id: 'team2', name: 'Team B' },
@@ -79,9 +136,10 @@ export default function SeasonDetails() {
 
         // Simulate fetching data
         setSeason(dummySeason);
-        setGames(dummyGames);
         setTeams(dummyTeams);
     }, []);
+
+    console.log(games);
 
     const handleTabClick = (tab: 'games' | 'teams') => {
         setActiveTab(tab);
@@ -121,6 +179,7 @@ export default function SeasonDetails() {
                 <tr className="bg-gray-700 text-white border-b border-gray-300">
                 <th className="w-1/4 p-2 border-r border-gray-300">Game</th>
                 <th className="w-1/4 p-2 border-r border-gray-300">Date</th>
+                <th className="w-1/4 p-2 border-r border-gray-300">Time</th>
                 <th className="w-1/4 p-2 border-r border-gray-300">Result</th>
                 <th className="w-1/4 p-2 border-r border-gray-300">Actions</th>
                 </tr>
@@ -128,9 +187,15 @@ export default function SeasonDetails() {
             <tbody>
                 {games.map((game) => (
                 <tr key={game._id} className="border-b border-gray-300 hover:bg-gray-800">
-                    <td className="w-1/5 text-center p-2 border-r border-gray-300">{`${game.team1} vs ${game.team2}`}</td>
+                    {game.teams.length === 2 ? (
+                        <td className="w-1/5 text-center p-2 border-r border-gray-300">{`${game.teams[0].team} vs ${game.teams[1].team}`}</td> // Needs to be game.teams[0].team.name team is not populated
+                    ): <td className="w-1/5 text-center p-2 border-r border-gray-300"></td>}
                     <td className="w-1/5 text-center p-2 border-r border-gray-300">{formatDate(game.date)}</td>
-                    <td className="w-1/5 text-center p-2 border-r border-gray-300">{game.result}</td>
+                    <td className="w-1/5 text-center p-2 border-r border-gray-300">{game.time}</td>
+                    {game.teams.length === 2 ? (
+                        <td className="w-1/5 text-center p-2 border-r border-gray-300">{`${game.teams[0].score} - ${game.teams[1].score}`}</td>
+                    ): <td className="w-1/5 text-center p-2 border-r border-gray-300"> 0 - 0</td>
+                    }
                     <td className="w-1/5 text-center p-2 border-r border-gray-300">
                     <button
                         className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
