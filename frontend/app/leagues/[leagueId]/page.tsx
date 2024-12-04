@@ -179,7 +179,7 @@ export default function LeagueID() {
                             <td className="w-1/5 text-center p-2">
                                 <button
                                     className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
-                                    onClick={() => router.push(`/leagues/${league._id}`)}
+                                    onClick={() => router.push(`/leagues/${league._id}/season/${season._id}`)}
                                 >
                                     View
                                 </button>
