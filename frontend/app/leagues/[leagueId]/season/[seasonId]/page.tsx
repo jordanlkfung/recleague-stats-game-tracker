@@ -6,8 +6,6 @@ interface Season {
   _id: string;
   start_date: string;
   end_date: string;
-  teams: string[];
-  games: string[];
 }
 
 interface Game {
@@ -17,11 +15,8 @@ interface Game {
       tie: boolean;
     };
     _id: string;
-    sport: string;
     date: string;
     time: string;
-    type: string;
-    stat: any[]; 
     teams: TeamReference[]; 
 }
   
@@ -44,12 +39,32 @@ const formatDate = (dateString: string): string => {
 export default function SeasonDetails() {
     const router = useRouter();
     const { leagueId, seasonId } = useParams();
-    const [season, setSeason] = useState<Season | null>(null);
+    const [season, setSeason] = useState<Season>();
     const [games, setGames] = useState<Game[]>([]);
     const [teams, setTeams] = useState<Team[]>([]);
     const [activeTab, setActiveTab] = useState<'games' | 'teams'>('teams'); // To toggle between games and teams
 
     useEffect(() => {
+        const fetchSeason = async () => {
+            try {
+                const response = await fetch(`/api/leagues/${leagueId}/season/${seasonId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    const data: Season = await response.json();
+                    setSeason(data);
+                } else {
+                    console.error('Error fetching season by ID');
+                }
+            } catch (error) {
+                console.error('An error occurred while fetching season by ID', error);
+            }
+        }
+
         const fetchTeams = async () => {
             try {
                 const response = await fetch(`/api/leagues/${leagueId}/season/${seasonId}/team`, {
@@ -63,10 +78,10 @@ export default function SeasonDetails() {
                     const data: Team[] = await response.json();
                     setTeams(data);
                 } else {
-                    console.error('Error fetching league by ID');
+                    console.error('Error fetching teams');
                 }
             } catch (error) {
-                console.error('An error occurred while fetching managers', error);
+                console.error('An error occurred while fetching teams', error);
             }
         }
 
@@ -119,27 +134,9 @@ export default function SeasonDetails() {
         }
 
         fetchGames();
-        // Dummy data for season details
-        const dummySeason: Season = {
-        _id: '674fe27b4485f216c24a0327',
-        start_date: '2022-10-21T00:00:00.000Z',
-        end_date: '2023-04-12T00:00:00.000Z',
-        teams: ['Team A', 'Team B', 'Team C'],
-        games: ['game1', 'game2', 'game3'],
-        };
-
-        const dummyTeams: Team[] = [
-        { _id: 'team1', name: 'Team A' },
-        { _id: 'team2', name: 'Team B' },
-        { _id: 'team3', name: 'Team C' },
-        ];
-
-        // Simulate fetching data
-        setSeason(dummySeason);
-        setTeams(dummyTeams);
-    }, []);
-
-    console.log(games);
+        fetchTeams();
+        fetchSeason();
+    }, [leagueId, seasonId]);
 
     const handleTabClick = (tab: 'games' | 'teams') => {
         setActiveTab(tab);
@@ -198,8 +195,8 @@ export default function SeasonDetails() {
                     }
                     <td className="w-1/5 text-center p-2 border-r border-gray-300">
                     <button
-                        className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
-                        onClick={() => alert(`Viewing stats for ${game.date}`)} 
+                        className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg" 
+                        onClick={() => router.push(`/leagues/${leagueId}/season/${seasonId}/game/${game._id}`)}
                     >
                         View
                     </button>
@@ -225,7 +222,7 @@ export default function SeasonDetails() {
                     <td className="w-1/5 text-center p-2 border-r border-gray-300">
                     <button
                         className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
-                        onClick={() => alert(`Viewing ${team.name}`)} 
+                        onClick={() => router.push(`/leagues/${leagueId}/season/${seasonId}/team/${team._id}`)}
                     >
                         View
                     </button>
