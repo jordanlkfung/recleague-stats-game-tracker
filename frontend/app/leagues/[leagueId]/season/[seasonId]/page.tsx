@@ -152,6 +152,10 @@ export default function SeasonDetails() {
     const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         if (!isOpen) return null;
         const [name, setName] = useState("");
+        const [date, setDate] = useState('');
+        const [time, setTime] = useState('');
+        const [team1, setTeam1] = useState<string>('');
+        const [team2, setTeam2] = useState<string>('');
         const [errorMsg, setErrorMsg] = useState("");
 
 
@@ -168,28 +172,131 @@ export default function SeasonDetails() {
                 throw Error("");
             }
         }
+        
         const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             setName(event.target.value);
         }
+        
+
+        const createGame = async (event: React.FormEvent<HTMLButtonElement>) => {
+            event.preventDefault();
+            // const response = await fetch(`/api/leagues/${leagueId}/season/${seasonId}/team`, {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ name })
+            // },);
+
+
+            // if (!response.ok) {
+            //     throw Error("");
+            // }
+
+            console.log(`Date: ${date}`);
+            console.log(`Time: ${time}`);
+            console.log(`Team 1: ${team1}`);
+            console.log(`Team 2: ${team2}`);
+        }
+
+        const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+            setDate(event.target.value);
+        };
+        
+        const handleTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+            setTime(event.target.value);
+        };
+        
+        const handleTeam1Change = (event: React.ChangeEvent<HTMLSelectElement>) => {
+            setTeam1(event.target.value);
+        };
+        
+        const handleTeam2Change = (event: React.ChangeEvent<HTMLSelectElement>) => {
+            setTeam2(event.target.value);
+        };
+        
 
         return (
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
                 <div className="bg-white p-8 rounded-xl w-1/3 flex items-center justify-center">
-                    <form className="grid grid-rows-1 gap-2">
-                        <label htmlFor="name" className="mb-0 text-blue-400">Team Name</label>
+                    {activeTab === 'teams' ? (
+                        <form className="grid grid-rows-1 gap-2">
+                            <label htmlFor="name" className="mb-0 text-blue-400">Team Name</label>
+                            <input
+                                type="text"
+                                className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
+                                name="name"
+                                id="name"
+                                value={name}
+                                onChange={handleNameChange}
+                                required
+                            />
+
+
+
+
+                            <div className="flex justify-center gap-4 mt-4">
+                                <button
+                                    className="bg-red-700 text-white px-4 py-2 rounded-lg w-1/2"
+                                    onClick={onClose}>
+                                    Cancel
+                                </button>
+                                <button
+                                    className="bg-blue-500 text-white px-4 py-2 rounded-lg w-1/2"
+                                    onClick={createTeam}>
+                                    Create
+                                </button>
+                            </div>
+                            {errorMsg && <div className="text-red-500 p-0 mb-0">{errorMsg}</div>}
+                        </form>
+                    ) : (
+                        <form className="grid grid-rows-1 gap-2">
+                        <label htmlFor="date" className="mb-0 text-blue-400">Date</label>
                         <input
-                            type="text"
-                            className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
-                            name="name"
-                            id="name"
-                            value={name}
-                            onChange={handleNameChange}
+                            type="date"
+                            value={date}
+                            onChange={handleDateChange}
                             required
+                            className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
                         />
-
-
-
-
+                        <label htmlFor="time" className="mb-0 text-blue-400">Time</label>
+                        <input
+                            type="time"
+                            value={time}
+                            onChange={handleTimeChange}
+                            required
+                            className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
+                        />
+                        <label htmlFor="team1" className="mb-0 text-blue-400">Team 1</label>
+                        <select
+                            id="team1"
+                            value={team1}
+                            onChange={handleTeam1Change}
+                            required
+                            className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
+                        >
+                            <option value="">Select Team</option>
+                            {teams.map((team) => (
+                                <option key={team._id} value={team._id}>
+                                    {team.name}
+                                </option>
+                            ))}
+                        </select>
+                        <label htmlFor="team2" className="mb-0 text-blue-400">Team 2</label>
+                        <select
+                            id="team2"
+                            value={team2}
+                            onChange={handleTeam2Change}
+                            required
+                            className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
+                        >
+                            <option value="">Select Team</option>
+                            {teams
+                                .filter((team) => team._id !== team1)
+                                .map((team) => (
+                                    <option key={team._id} value={team._id}>
+                                        {team.name}
+                                    </option>
+                                ))}
+                        </select>
                         <div className="flex justify-center gap-4 mt-4">
                             <button
                                 className="bg-red-700 text-white px-4 py-2 rounded-lg w-1/2"
@@ -198,13 +305,13 @@ export default function SeasonDetails() {
                             </button>
                             <button
                                 className="bg-blue-500 text-white px-4 py-2 rounded-lg w-1/2"
-                                onClick={createTeam}>
+                                onClick={createGame}>
                                 Create
                             </button>
                         </div>
-                        {errorMsg && <div className="text-red-500 p-0 mb-0">{errorMsg}</div>}
+                        {errorMsg && <div className="text-red-500 p-2">{errorMsg}</div>}
                     </form>
-
+                    )}
                 </div>
             </div>
         );
@@ -305,6 +412,13 @@ export default function SeasonDetails() {
             {activeTab === 'teams' && <div className="absolute bottom-4 right-4">
                 <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition" onClick={openModal}>
                     Add Team
+                </button>
+                <Modal isOpen={modelOpen} onClose={closeModal} />
+
+            </div>}
+            {activeTab === 'games' && <div className="absolute bottom-4 right-4">
+                <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition" onClick={openModal}>
+                    Add Game
                 </button>
                 <Modal isOpen={modelOpen} onClose={closeModal} />
 
