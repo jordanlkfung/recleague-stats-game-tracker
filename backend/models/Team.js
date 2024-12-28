@@ -7,9 +7,19 @@ const teamSchema = new mongoose.Schema({
         match: [/^[A-Za-z\s]{3,30}$/, 'Team name must be between 3 and 30 characters long and can only include letters and spaces.'],
     },
     roster: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Player',
+        position: {
+            type: String,
+            required: [true, 'Each player has a position'],
+        },
+        player: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        }
     }],
+    captain: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }
 });
 
 module.exports = mongoose.model('Team', teamSchema);

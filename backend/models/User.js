@@ -21,7 +21,36 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
-    leagues: [{
+    name: {
+        type: String,
+        required: [true, 'name is required.'],
+        match: [/^[A-Za-z\s]{2,50}$/, 'Player name must be between 2 and 50 characters long and can only include letters and spaces.'],
+    },
+    birthdate: {
+        type: Date,
+        required: [true, 'birthdate is required']
+    },
+    sex: {
+        type: String,
+        required: [true, 'sex is required'],
+        enum: ['Male', 'Female'], // Drop-down menu selection
+    },
+    height: {
+        feet: {
+            type: Number,
+            min: [0, 'Feet cannot be negative.'],
+        },
+        inches: {
+            type: Number,
+            min: [0, 'Inches cannot be negative.'],
+            max: [11, 'Inches must be at most 11.'],
+        },
+    },
+    weight: {
+        type: Number,
+        min: [0, 'Weight(lbs) cannot be negative.'],
+    },
+    leaguesFollowing: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'League',
     }],
@@ -33,10 +62,10 @@ userSchema.pre('save', async function (next) {
             const existingUser = await mongoose.model('User').findOne({ email: this.email });
             if (existingUser) {
                 const error = new Error('Email already in use.');
-                return next(error);  
+                return next(error);
             }
         } catch (err) {
-            return next(err);  
+            return next(err);
         }
     }
 

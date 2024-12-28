@@ -4,7 +4,8 @@ var controller = require('../controllers/userController.js');
 
 router.route("")
     .post(controller.addUser)
-    .get(controller.getAllUsers);
+    .get(controller.getAllUsers)
+    .patch(controller.updateUser);
 
 router.route("/login")
     .post(controller.login);

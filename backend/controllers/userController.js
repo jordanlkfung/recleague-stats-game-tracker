@@ -1,6 +1,7 @@
 var mongoose = require('mongoose');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
+const { tryCatch } = require('../utils/tryCatch');
 
 
 // req.params._id is the ObjectID of the User Document
@@ -8,155 +9,155 @@ const bcrypt = require('bcrypt');
 
 /** /user */
 // POST Register
-exports.addUser = async function (req, res) {
+exports.addUser = tryCatch(async function (req, res) {
     var newUser = new User(req.body);
-    try {
-        const savedUser = await newUser.save();
-        res.status(201).json(savedUser);
-    }
-    catch (err) {
-        res.status(500).send({ message: 'An error has occured' });
-    }
-}; // Duplicate email, invalid email, and invalid password tests PASSED
+    const savedUser = await newUser.save();
+    res.status(201).json(savedUser);
+}); // Duplicate email, invalid email, and invalid password tests PASSED
 
 // GET Get all users
-exports.getAllUsers = async function (req, res) {
-    try {
-        const users = await User.find({});
-        res.status(200).json(users);
-    } catch (err) {
-        res.status(500).send({ message: 'An error has occured while getting all Users' });
-    }
-}; // Test PASSED
+exports.getAllUsers = tryCatch(async function (req, res) {
+    const users = await User.find({});
+    res.status(200).json(users);
+}); // Test PASSED
 
+//PATCH update or add height, weight
+exports.updateUser = tryCatch(async function (req, res) {
+    const { height, weight } = req.body;
+    const { feet, inches } = height;
+    const user = await User.findById(req.params._id);
+
+    if (!user) throw new AppError(404, 'User not found');
+
+    const update = await User.updateOne({ _id: req.params._id },
+        {
+            $set: {
+                weight: weight,
+                "height.feet": feet,
+                "height.inches": inches
+            }
+        }
+    );
+
+    if (update) {
+        return res.status(204).send(update);
+    }
+    else {
+        throw new AppError(304, "No changes were made to user");
+    }
+
+});
 
 // POST Login
-exports.login = async function (req, res) {
+exports.login = tryCatch(async function (req, res) {
     const { email, password } = req.body;
 
-    try {
-        const user = await mongoose.model('User').findOne({ email });
+    const user = await mongoose.model('User').findOne({ email });
 
-        console.log()
 
-        if (!user) {
-            return res.status(404).send({ message: 'User not found.' });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            return res.status(401).send({ message: 'Invalid email or password.' });
-        }
-
-        res.status(200).send({ message: 'Login successful', user: { _id: user._id, email: user.email } });
-    } catch (err) {
-        console.error('Login error:', err);
-        res.status(500).send({ message: 'An error has occurred' });
+    if (!user) {
+        throw new AppError(404, 'User not found.')
     }
-};
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+        throw new AppError(401, 'Invalid email or password')
+    }
+
+    return res.status(200).send({ message: 'Login successful', user: { _id: user._id, email: user.email } });
+
+});
 
 
 /** /user/:_id */
 // GET user by id 
-exports.getUser = async function (req, res) {
-    try {
-        const user = await User.findById(req.params._id);
-        if (user) {
-            res.status(200).json(user);
-        } else {
-            res.status(404).send({ message: 'User not found.' });
-        }
-    } catch (err) {
-        res.status(500).send({ message: 'An error occurred retrieving user.' });
+exports.getUser = tryCatch(async function (req, res) {
+
+    const user = await User.findById(req.params._id);
+    if (user) {
+        return res.status(200).json(user);
+    } else {
+        throw new AppError(404, 'User not found.');
     }
-}; // Test Passed
+
+}); // Test Passed
 
 /** /user/:_id/leagues */
 // GET user's league(s)'
-exports.getUserLeagues = async function (req, res) {
-    try {
-        const user = await User.findById(req.params._id);
+exports.getUserLeagues = tryCatch(async function (req, res) {
 
-        if (!user) {
-            return res.status(404).send({ message: 'User not found.' }); // Can populate leagues array with the League objects instead of ids
-        }
+    const user = await User.findById(req.params._id);
 
-        if (user.leagues.length > 0) {
-            await user.populate('leagues');
-        }
-
-        res.status(200).json(user.leagues);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send({ message: 'An error occurred while retrieving the user leagues.' });
+    if (!user) {
+        throw new AppError(404, 'User not Found'); // Can populate leagues array with the League objects instead of ids
     }
-}; // Test Passed
+
+    if (user.leagues.length > 0) {
+        await user.populate('leagues');
+    }
+
+    return res.status(200).json(user.leagues);
+
+}); // Test Passed
 
 // POST 
-exports.addLeagueToUser = async (req, res) => {
+exports.addLeagueToUser = tryCatch(async (req, res) => {
     const userId = req.params._id;
-    const leagueId= req.body.leagueId;
-  
-    try {
-        const user = await User.findById(userId);
+    const leagueId = req.body.leagueId;
 
-        if(!user) return res.status(404).json({ message: 'User not found.' });
+    const user = await User.findById(userId);
 
-        if(!user.leagues) return res.status(404).json({ message: 'User\'s leagues not found.' });
+    if (!user) throw new AppError(404, 'User not found');
 
-        const leagues = user.leagues.filter(item => item.toString() === leagueId);
+    if (!user.leagues) throw new AppError(404, 'User\'s leagues not found.');
 
-        if(leagues.length > 0) {
-            return res.status(400).json({ message: 'League exists for the user.' });
-        }
+    const leagues = user.leagues.filter(item => item.toString() === leagueId);
 
-        const result = await User.updateOne(
-            { _id: userId },
-            { $push: { leagues: leagueId } }
-        );
-
-        if (result) {
-            return res.status(200).json(result); 
-        } else {
-            return res.status(400).json({ message: 'No changes made to the user\'s leagues.' });
-        } 
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+    if (leagues.length > 0) {
+        throw new AppError(404, 'League exists for the user.');
     }
-}; // Test Passed
+
+    const result = await User.updateOne(
+        { _id: userId },
+        { $push: { leagues: leagueId } }
+    );
+
+    if (result) {
+        return res.status(200).json(result);
+    } else {
+        throw new AppError(400, 'No changes made to the user\'s leagues.');
+    }
+
+}); // Test Passed
 
 // DELETE Delete a user's league
-exports.deleteLeagueFromUser = async (req, res) => {
+exports.deleteLeagueFromUser = tryCatch(async (req, res) => {
     const userId = req.params._id;
-    const leagueId= req.body.leagueId;
-  
-    try {
-        const user = await User.findById(userId);
+    const leagueId = req.body.leagueId;
 
-        if(!user) return res.status(404).json({ message: 'User not found.' });
 
-        if(!user.leagues) return res.status(404).json({ message: 'User\'s leagues not found.' });
+    const user = await User.findById(userId);
 
-        const leagues = user.leagues.filter(item => item.toString() === leagueId);
+    if (!user) throw new AppError(404, 'User not found');
 
-        if(!leagues.length > 0) {
-            return res.status(400).json({ message: 'League does not exist for the user.' });
-        }
+    if (!user.leagues) throw new AppError(404, 'User\'s leagues not found.');
 
-        const result = await User.updateOne(
-            { _id: userId },
-            { $pull: { leagues: leagueId } }
-        );
+    const leagues = user.leagues.filter(item => item.toString() === leagueId);
 
-        if (result) {
-            return res.status(200).json(result); 
-        } else {
-            return res.status(400).json({ message: 'No changes made to the user\'s leagues.' });
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+    if (!leagues.length > 0) {
+        throw new AppError(404, 'League exists does not for the user.');
     }
-  }; // Test PASSED
+
+    const result = await User.updateOne(
+        { _id: userId },
+        { $pull: { leagues: leagueId } }
+    );
+
+    if (result) {
+        return res.status(200).json(result);
+    } else {
+        throw new AppError(400, 'No changes made to the user\'s leagues.');
+    }
+
+}); // Test PASSED

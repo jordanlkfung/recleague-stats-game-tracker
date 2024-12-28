@@ -40,17 +40,28 @@ const leagueSchema = new mongoose.Schema({
             ref: 'Game'
         }],
     }],
-    managers: [{
+    managers: [{//league managers
+        //managers can add/delete teams, assign captains to teams
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     }],
+    players: [{
+        isActive: {
+            type: Boolean,
+            default: true
+        },
+        player: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        }
+    }]
 });
 
 leagueSchema.pre('remove', async function (next) {
     try {
-         await User.updateMany(
-            { _id: { $in: this.managers } }, 
-            { $pull: { leagues: this._id } } 
+        await User.updateMany(
+            { _id: { $in: this.managers } },
+            { $pull: { leagues: this._id } }
         );
 
         for (const season of this.seasons) {

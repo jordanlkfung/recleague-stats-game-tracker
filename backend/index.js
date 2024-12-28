@@ -54,6 +54,8 @@ Player = require('./models/Player.js')
 var playerRoute = require('./routes/playerRoutes.js');
 app.use('/player', playerRoute);
 
+app.use(errorHandler);
+
 app.all('*', (req, res) => {
     res.status(404);
     if (req.accepts('html')) {
