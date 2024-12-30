@@ -11,7 +11,7 @@ export default function Login() {
 
     const handleFormSubmit = async (event: React.FormEvent<HTMLButtonElement>) => {
         event.preventDefault();
-        if (validEmail()) {
+        if (emailError === "") {
             try {
                 const response = await fetch('/api/login', {
                     method: 'POST',
@@ -30,11 +30,11 @@ export default function Login() {
                     const storedUser = sessionStorage.getItem('user');
                     if (storedUser) {
                         const user = JSON.parse(storedUser);
-                        console.log(user); 
+                        console.log(user);
                     }
 
                     setLoginError(null);
-                    router.push("/leagues"); 
+                    router.push("/leagues");
                 }
             } catch (e) {
                 console.error("Login error:", e);
@@ -47,7 +47,7 @@ export default function Login() {
 
     const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setEmail(event.target.value);
-        if (validEmail()) {
+        if (validEmail(event.target.value)) {
             setEmailError("");
         } else {
             setEmailError("Invalid Email");
@@ -58,8 +58,8 @@ export default function Login() {
         setPassword(event.target.value);
     };
 
-    const validEmail = () => {
-        const match = email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/);
+    const validEmail = (e: String) => {
+        const match = e.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/);
         return !(match === null);
     };
 

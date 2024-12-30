@@ -23,16 +23,16 @@ const userSchema = new mongoose.Schema({
     },
     name: {
         type: String,
-        required: [true, 'name is required.'],
+        // required: [true, 'name is required.'],
         match: [/^[A-Za-z\s]{2,50}$/, 'Player name must be between 2 and 50 characters long and can only include letters and spaces.'],
     },
     birthdate: {
         type: Date,
-        required: [true, 'birthdate is required']
+        // required: [true, 'birthdate is required']
     },
     sex: {
         type: String,
-        required: [true, 'sex is required'],
+        // required: [true, 'sex is required'],
         enum: ['Male', 'Female'], // Drop-down menu selection
     },
     height: {

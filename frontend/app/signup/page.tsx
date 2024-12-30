@@ -1,18 +1,23 @@
 'use client'
-import { useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
 
 export default function Signup() {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [emailError, setEmailError] = useState<string>('');
-    const [password, setPassword] = useState("");
-    const [confirmpassword, setConfirmPassword] = useState('')
-    const [passwordsMatch, setPasswordsMatch] = useState(true);
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isFormValid, setIsFormValid] = useState(false);
+    const [signUpError, setSignUpError] = useState<string | null>(null);
 
-    const handleFormSumbit = async (event: React.FormEvent<HTMLButtonElement>) => {
+    useEffect(() => {
+        setIsFormValid((emailError === "") && email.length > 0 && password === confirmPassword && password.length > 0 && confirmPassword.length > 0)
+    }, [email, emailError, password, confirmPassword]);
+
+    const handleFormSumbit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (passwordsMatch && validEmail()) {
+        if (isFormValid) {
             try {
                 const response = await fetch('/api/signup', {
                     method: 'POST',
@@ -21,10 +26,11 @@ export default function Signup() {
                 });
 
                 if (!response.ok) {
-
+                    const errorData = await response.json();
+                    setSignUpError(errorData.message);
                 }
                 else {
-                    router.push("")
+                    router.push("/")
                 }
             } catch (e) {
                 //ERROR SHOW SNACKBAR
@@ -36,46 +42,40 @@ export default function Signup() {
 
     const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setPassword(event.target.value);
-        setPasswordsMatch(event.target.value === confirmpassword);
-        disableSignUpButton();
     }
     const handleConfirmPasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setConfirmPassword(event.target.value);
-        setPasswordsMatch(password === event.target.value);
-        disableSignUpButton()
     }
     const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setEmail(event.target.value);
-        if (validEmail())
+        if (validEmail(event.target.value))
             setEmailError("");
         else
             setEmailError('Invalid Email');
-        disableSignUpButton();
     }
-    const validEmail = () => {
-        const match = email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/);
+    const validEmail = (e: String) => {
+        const match = e.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/);
         return !(match === null);
-    }
-    const disableSignUpButton = () => {
-        const button = document.getElementById("signUpBtn")!;
-        if (emailError || !passwordsMatch)
-            button.setAttribute('disabled', '');
-        else
-            button.removeAttribute('disabled');
     }
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white">
-            <form className='grid grid-rows-1 gap-2'>
+            <form className='grid grid-rows-1 gap-2' onSubmit={handleFormSumbit}>
                 <label htmlFor="email" className="mb-0">Email</label>
                 <input type="text" className="rounded-md text-black p-3 w-80" name="email" id="email" onChange={handleEmailChange} value={email} required></input>
                 {emailError && <div className='text-red-500'>{emailError}</div>}
                 <label htmlFor="password" className="mb-0">Password</label>
                 <input type="password" className="rounded-md text-black p-3 w-80" name="password" id="password" onChange={handlePasswordChange} value={password} required></input>
                 <label htmlFor="comfirm password" className='mb-0'>Confirm Password</label>
-                <input type="password" className="rounded-md text-black p-3 w-80" name="confirmpassword" id="password2" onChange={handleConfirmPasswordChange} value={confirmpassword} required></input>
-                {!passwordsMatch && <div className="text-red-500">Passwords Do Not Match</div>}
-                <button className='rounded bg-blue-500 hover:bg-blue-700 mt-3 p-2' onSubmit={handleFormSumbit} id="signUpBtn" >Sign Up</button>
+                <input type="password" className="rounded-md text-black p-3 w-80" name="confirmpassword" id="password2" onChange={handleConfirmPasswordChange} value={confirmPassword} required></input>
+                {!(password === confirmPassword) && <div className="text-red-500">Passwords Do Not Match</div>}
+                {signUpError && <div className="text-red-500">{signUpError}</div>}
+                <button
+                    type="submit"
+                    className={`rounded bg-blue-500 hover:bg-blue-700 mt-3 p-2 ${!isFormValid ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={!isFormValid}>
+                    Sign Up
+                </button>
             </form>
         </div>);
 }

@@ -3,23 +3,21 @@ const League = require('../models/League');
 const Team = require('../models/Team');
 const Player = require('../models/Player');
 const User = require('../models/User');
-const Game = require('../models/Game')
+const Game = require('../models/Game');
+const { tryCatch } = require('../utils/tryCatch');
 
 ///////////////////////////
 ////////// LEAGUE /////////
 ///////////////////////////
 /** /league */
 // POST Create new league
-exports.addLeague = async function (req, res) {
+exports.addLeague = tryCatch(async function (req, res) {
+    //TODO: ADD USER THAT CREATED LEAGUE AS MANAGER
     var newLeague = new League(req.body);
+    const savedLeague = await newLeague.save();
+    return res.status(201).json(savedLeague);
 
-    try {
-        const savedLeague = await newLeague.save();
-        res.status(201).json(savedLeague);
-    } catch (err) {
-        res.status(500).send({ message: 'An error occurred' });
-    }
-} // League name and sport enums tests PASSED
+}); // League name and sport enums tests PASSED
 
 // GET Get all leagues
 exports.getAllLeagues = async function (req, res) {
@@ -66,29 +64,29 @@ exports.deleteLeague = async function (req, res) {
                         if (team.roster && team.roster.length > 0) {
                             await Player.deleteMany({ _id: { $in: team.roster } });
                         }
-        
+
                         await Team.findByIdAndDelete(team._id);
                     }
                 }
-        
+
                 if (season.games && season.games.length > 0) {
                     const gameIds = season.games.map(game => game._id);
                     await Game.deleteMany({ _id: { $in: gameIds } });
                 }
-                
+
                 await League.updateOne(
                     { _id: leagueId },
                     { $pull: { seasons: { _id: season._id } } }
                 );
             }
         }
-        
+
 
         // Managers
         if (league.managers || league.managers.length > 0) {
             await User.updateMany(
-                { _id: { $in: league.managers }},
-                { $pull: { leagues: leagueId} }
+                { _id: { $in: league.managers } },
+                { $pull: { leagues: leagueId } }
             )
         }
 
@@ -103,6 +101,71 @@ exports.deleteLeague = async function (req, res) {
         return res.status(500).send('Internal server error');
     }
 };
+
+/** /league/:_id/playerPool */
+// POST Add user to active player pool in league
+exports.addUserToPlayerPool = tryCatch(async function (req, res) {
+    const { userId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) throw new AppError(404, 'User was not found');
+
+    const league = await League.findById(req.params._id);
+    if (!league) throw new AppError(404, 'League was not found');
+
+    const result = await League.updateOne(
+        { _id: req.params._id },
+        { $push: { players: { player: userId } } }
+    );
+
+    if (!result || result.modifiedCount === 0) throw new AppError(500, 'Failed to add user to league');
+
+    return res.status(201).send(result);
+});
+
+/** /league/:_id/playerPool */
+//GET Get users in player pool
+exports.getPlayerPool = tryCatch(async function (req, res) {
+    const league = await League.findById(req.params._id).populate('players.player', { password: 0, createdAt: 0, leaguesFollowing: 0, leagues: 0, __v: 0 }).select({});
+
+    if (!league) throw new AppError(404, 'League was not found');
+
+    return res.status(200).send(league.players);
+})
+
+/** /league/:_id/playerPool */
+//PATCH update a players active status
+exports.changePlayerStatus = tryCatch(async function (req, res) {
+    const { playerId, updatedStatus } = req.body;
+
+    const league = await League.findById(req.params._id);
+
+    if (!league) throw new AppError(404, 'League was not found');
+
+    if (!league.players) throw new AppError(400, 'No players in player pool');
+
+    const player = league.players.find(p => p.player.toString() === playerId);
+
+    if (!player) throw new AppError(404, 'Player not found');
+
+    if (player.isActive === updatedStatus) return res.status(304).send({ message: "No status change made" });
+
+    const result = await League.updateOne(
+        { _id: req.params._id, 'players.player': playerId },
+        { $set: { "players.$.isActive": updatedStatus } }
+    );
+
+    if (!result) {
+        throw new AppError(500, 'Failed to update player status');
+    }
+    else {
+        return res.status(200).send(result);
+    }
+
+});
+
+/** /league/:_id/playerPool */
+//DELETE Remove a player from playerpool
 
 
 /** /:sport */
@@ -254,7 +317,7 @@ exports.deleteManagerFromLeague = async function (req, res) {
 exports.getLeagueSeasons = async function (req, res) {
     try {
         const league = await League.findById(req.params._id);
-        
+
         if (!league) return res.status(404).send({ message: 'League not found' });
 
 
@@ -344,7 +407,7 @@ exports.deleteSeasonFromSeasons = async function (req, res) {
 
                 if (team.roster && team.roster.length > 0) {
                     for (let playerId of team.roster) {
-                        await Player.findByIdAndDelete(playerId); 
+                        await Player.findByIdAndDelete(playerId);
                     }
                 }
 
@@ -413,13 +476,13 @@ exports.getLeagueTeams = async function (req, res) {
         const league = await League.findById(req.params._id).populate('seasons.teams').exec();
 
         if (!league) return res.status(404).send({ message: 'An error occurred retrieving League.' });
-        
+
         const season = league.seasons.find(s => s._id.toString() === req.params._sid);
 
         if (!season) return res.status(404).send({ message: 'An error occurred retrieving Season.' });
 
         if (!season.teams) return res.status(404).send({ message: 'An error occurred retrieving Team.' });
-        
+
         res.status(200).send(season.teams);
     }
     catch (e) {
@@ -447,7 +510,7 @@ exports.addTeamToSeason = async function (req, res) {
         if (!teamParams.name) return res.status(404).json({ message: 'Team name is not included.' });
 
         const team = season.teams.filter(t => t.name === teamParams.name);
-        
+
         if (team.length > 0) {
             return res.status(400).json({ message: 'Team exists in league.' });
         }
@@ -513,7 +576,7 @@ exports.getTeamByID = async function (req, res) {
         const league = await League.findById(req.params._id).populate('seasons.teams').exec();
 
         if (!league) return res.status(404).send({ message: 'An error occurred retrieving League.' });
-        
+
         const season = league.seasons.find(s => s._id.toString() === req.params._sid);
 
         if (!season) return res.status(404).send({ message: 'An error occurred retrieving Season.' });
@@ -523,7 +586,7 @@ exports.getTeamByID = async function (req, res) {
         const team = season.teams.find(t => t._id.toString() === req.params._tid);
 
         if (!team) return res.status(404).send({ message: 'An error occurred retrieving Team.' });
-        
+
         res.status(200).send(team);
     }
     catch (e) {
@@ -538,7 +601,7 @@ exports.getPlayers = async function (req, res) {
         const league = await League.findById(req.params._id).populate('seasons.teams').exec();
 
         if (!league) return res.status(404).send({ message: 'An error occurred retrieving League.' });
-        
+
         const season = league.seasons.find(s => s._id.toString() === req.params._sid);
 
         if (!season) return res.status(404).send({ message: 'An error occurred retrieving Season.' });
@@ -552,7 +615,7 @@ exports.getPlayers = async function (req, res) {
         team = await Team.findById(team._id).populate('roster');
 
         if (!team.roster) return res.status(404).send({ message: 'An error occurred retrieving Players.' });
-        
+
         return res.status(200).json(team.roster);
     }
     catch (e) {
@@ -587,7 +650,7 @@ exports.addPLayerToRoster = async function (req, res) {
         if (!newPlayer) return res.status(500).json({ message: 'An error occurred creating Player.' });
 
         const result = await Team.updateOne(
-            { _id: teamId},
+            { _id: teamId },
             { $push: { "roster": newPlayer._id } }
         );
 
@@ -626,7 +689,7 @@ exports.deletePlayerFromRoster = async function (req, res) {
         if (!team.roster) return res.status(404).send({ message: 'An error occurred retrieving roster.' });
 
         const result = await Team.updateOne(
-            { _id: teamId},
+            { _id: teamId },
             { $pull: { "roster": playerToRemove._id } }
         );
 
@@ -677,7 +740,7 @@ exports.addGameToSeason = async function (req, res) {
     const gameToAdd = req.body.game;
     const seasonID = req.params._sid;
 
-    try { 
+    try {
         const league = await League.findById(leagueID);
         if (!league)
             return res.status(404).send({ message: "League not found" });
@@ -706,7 +769,7 @@ exports.addGameToSeason = async function (req, res) {
 
         if (!existGame) return res.status(400).send({ message: "Game does not exist" });
 
-        const result = await League.updateOne({ _id: leagueID,'seasons._id': seasonID }, { $push: { 'seasons.$.games': gameToAdd._id } });
+        const result = await League.updateOne({ _id: leagueID, 'seasons._id': seasonID }, { $push: { 'seasons.$.games': gameToAdd._id } });
 
         if (result)
             res.status(201).send(result);
@@ -724,7 +787,7 @@ exports.deleteGameFromSeason = async function (req, res) {
     const gameToDelete = req.body.game;
     const seasonID = req.params._sid;
 
-    try { 
+    try {
         const league = await League.findById(leagueID);
         if (!league)
             return res.status(404).send({ message: "League not found" });
@@ -754,8 +817,8 @@ exports.deleteGameFromSeason = async function (req, res) {
             return res.status(400).send({ message: "Game is empty" });
         }
 
-        const result = await League.updateOne({ _id: leagueID,'seasons._id': seasonID }, { $pull: { 'seasons.$.games': gameToDelete._id } });
-        
+        const result = await League.updateOne({ _id: leagueID, 'seasons._id': seasonID }, { $pull: { 'seasons.$.games': gameToDelete._id } });
+
         const deletedGame = await Game.findByIdAndDelete(gameToDelete._id);
 
         if (!deletedGame) {

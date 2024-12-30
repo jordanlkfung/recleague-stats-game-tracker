@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const { tryCatch } = require('../utils/tryCatch');
-
+const AppError = require('../AppError');
 
 // req.params._id is the ObjectID of the User Document
 // Updating leagues needs the League's ObjectID in the request body (leagueId)
@@ -23,19 +23,22 @@ exports.getAllUsers = tryCatch(async function (req, res) {
 
 //PATCH update or add height, weight
 exports.updateUser = tryCatch(async function (req, res) {
-    const { height, weight } = req.body;
-    const { feet, inches } = height;
+    //TODO: ADD VALIDATION
+    // const { height, weight } = req.body;
+    // const { feet, inches } = height;
     const user = await User.findById(req.params._id);
 
     if (!user) throw new AppError(404, 'User not found');
 
     const update = await User.updateOne({ _id: req.params._id },
         {
-            $set: {
-                weight: weight,
-                "height.feet": feet,
-                "height.inches": inches
-            }
+            // $set: {
+            //     weight: weight,
+            //     "height.feet": feet,
+            //     "height.inches": inches
+            // }
+            $set: req.body,
+
         }
     );
 

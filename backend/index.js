@@ -12,6 +12,7 @@ const cors = require('cors');
 const corsOptions = require('./config/corsOptions.js');
 const PORT = process.env.PORT || 5000;
 
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -21,14 +22,11 @@ app.use(cookieParser());
 
 app.use(cors())
 
-app.use(errorHandler);
-
 app.use(express.json());
 
 app.use(logger);
 
 // Database Connection
-mongoose.Promise = global.Promise;
 mongoose.connect(process.env.DB_URI);
 
 /** Routes */

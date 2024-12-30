@@ -15,6 +15,11 @@ router.route("/:_id/manager")
     .post(controller.addManagerToLeague)
     .delete(controller.deleteManagerFromLeague);
 
+router.route("/:_id/playerPool")
+    .post(controller.addUserToPlayerPool)
+    .get(controller.getPlayerPool)
+    .patch(controller.changePlayerStatus);
+
 router.route("/sport/:sport")
     .get(controller.getLeaguesBySport)
 

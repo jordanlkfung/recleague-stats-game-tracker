@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Team = require('../models/Team');
 const Player = require('../models/Player');
+const { tryCatch } = require('../utils/tryCatch');
 
 /** /team */
 //GET get all teams
@@ -26,64 +27,48 @@ exports.addTeam = async function (req, res) {
     }
 }
 
-exports.getTeamByID = async function (req, res) {
-    try {
-        const team = await Team.findById(req.params._id).populate('roster');
-        res.status(200).send(team);
-    }
-    catch (e) {
-        res.status(500).json(e);
-    }
-}
+exports.getTeamByID = tryCatch(async function (req, res) {
+    const team = await Team.findById(req.params._id).populate('roster');
+    res.status(200).send(team);
+})
 /** /team/:_id/roster */
 //GET Get team roster
-exports.getRoster = async function (req, res) {
-    try {
-        const team = await Team.findById(req.params._id).populate('roster');
+exports.getRoster = tryCatch(async function (req, res) {
+    const team = await Team.findById(req.params._id).populate('roster');
 
-        console.log(team);
+    console.log(team);
 
-        if (!team) {
-            res.status(404).send({ message: 'Team not found' });
-        }
-        else {
-            res.status(200).send(team.roster);
-        }
+    if (!team) {
+        res.status(404).send({ message: 'Team not found' });
     }
-    catch (e) {
-        res.status(500).send({ message: 'An error occured while fetching rosters' });
+    else {
+        res.status(200).send(team.roster);
     }
-}
+})
 
-exports.addPlayer = async function (req, res) {
-    const playerId = req.body.playerId;
+exports.addPlayer = tryCatch(async function (req, res) {
+    const { userId, postion } = req.body;
 
-    try {
-        console.log(playerId);
 
-        const team = await Team.findById(req.params._id);       
-        
-        if (!team.roster) return res.status(404).send({ message: 'Roster not found' });
+    const team = await Team.findById(req.params._id);
 
-        const roster = team.roster.filter(p => p._id.toString() === playerId);
+    if (!team.roster) throw new AppError(404, 'Roster not found');
 
-        if (roster && roster.length > 0) return res.status(400).send({ message: 'Player already exists in roster' });
+    const roster = team.roster.filter(p => p.player.toString() === userId);
 
-        const result = await Team.findByIdAndUpdate(
-            { _id: req.params._id },
-            { $push: { roster: playerId } }
-        );
+    if (roster && roster.length > 0) throw new AppError(400, 'Player already on roster');
 
-        if (result || result.modifiedCount > 0) {
-            return res.status(200).send({ message: 'Success' });
-        } else {
-            return res.status(400).send({ message: 'Error while pushing player ID from roster' });
-        }
+    const result = await Team.findByIdAndUpdate(
+        { _id: req.params._id },
+        { $push: { roster: { position: position, player: userId } } }
+    );
+
+    if (result || result.modifiedCount > 0) {
+        return res.status(200).send({ message: 'Success' });
+    } else {
+        throw new AppError(400, 'Error while pushing player ID to roster');
     }
-    catch (e) {
-        res.status(500).send({ message: 'An error occured while adding player to team roster' });
-    }
-}
+})
 
 exports.deletePlayer = async function (req, res) {
     const playerId = req.body.playerId;
@@ -91,8 +76,8 @@ exports.deletePlayer = async function (req, res) {
     try {
         console.log(playerId);
 
-        const team = await Team.findById(req.params._id);       
-        
+        const team = await Team.findById(req.params._id);
+
         if (!team.roster) return res.status(404).send({ message: 'Roster not found' });
 
         const roster = team.roster.filter(p => p._id.toString() === playerId);
@@ -123,8 +108,8 @@ exports.modifyName = async function (req, res) {
 
         const updatedName = await Team.findByIdAndUpdate(
             { _id: req.params._id },
-            { $set: { name: req.body.name } }, 
-            { new: true, runValidators: true});
+            { $set: { name: req.body.name } },
+            { new: true, runValidators: true });
 
         if (updatedName)
             res.status(200).send(updatedName);
