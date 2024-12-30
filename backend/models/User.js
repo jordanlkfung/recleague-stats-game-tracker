@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema({
         type: Number,
         min: [0, 'Weight(lbs) cannot be negative.'],
     },
-    leaguesFollowing: [{
+    leagues: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'League',
     }],

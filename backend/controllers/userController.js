@@ -100,7 +100,7 @@ exports.getUserLeagues = tryCatch(async function (req, res) {
         await user.populate('leagues');
     }
 
-    return res.status(200).json(user.leagues);
+    return res.status(200).send(user.leagues);
 
 }); // Test Passed
 

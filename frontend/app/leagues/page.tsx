@@ -21,9 +21,10 @@ interface Season {
 
 interface ModalProps {
   isOpen: boolean;
+  userId: string;
   onClose: () => void;
 }
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, userId }) => {
   if (!isOpen) return null;
   const [sport, setSport] = useState<string>("Select Sport");
   const [name, setName] = useState("");
@@ -47,18 +48,21 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     const response = await fetch('api/leagues', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, sport })
+      body: JSON.stringify({ name, sport, manager: userId })
     },);
     console.log(response);
 
     if (!response.ok) {
       setErrorMsg("Error occurred while create league, please try again");
     }
+    else {
+      onClose();
+    }
   }
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-8 rounded-xl w-1/3 flex items-center justify-center">
-        <form className="grid grid-rows-1 gap-2">
+        <form className="grid grid-rows-1 gap-2" onSubmit={handleCreateLeague}>
           <label htmlFor="name" className="mb-0 text-blue-400">Name</label>
           <input
             type="text"
@@ -70,10 +74,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             required
           />
           <label htmlFor="sport" className="mb-0 text-blue-400">Sport</label>
-          {/* <select name="sport" className="border-2 border-blue-500 rounded-md p-3 w-80 text-black">
-            <option value="Basketball">Basketball</option>
-            <option value="Football">Football</option>
-          </select> */}
           <div className="relative inline-block text-center">
             <div className="relative group">
               <button
@@ -120,7 +120,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             </button>
             <button
               className="bg-blue-500 text-white px-4 py-2 rounded-lg w-1/2"
-              onClick={handleCreateLeague}>
+              type="submit">
               Create
             </button>
           </div>
@@ -136,25 +136,26 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 const LeaugeView = (leagues: League[]) => {
   const router = useRouter();
 
+
   return (
 
     <table className='table-auto w-10/12 mt-3 border border-gray-300 border-collapse'>
       <thead>
         <tr className='bg-gray-700 text-white border-b border-gray-300'>
-          <th className='w-1/12 p-2 border-r border-gray-300'>League Name</th>
-          <th className='w-1/12 p-2 border-r border-gray-300'>Sport</th>
-          <th className='w-1/12 p-2 border-r border-gray-300'>Seasons</th>
-          <th className='w-1/12 p-2 border-r border-gray-300'></th>
+          <th className='w-1/6 p-2 border-r border-gray-300'>League Name</th>
+          <th className='w-1/6 p-2 border-r border-gray-300'>Sport</th>
+          <th className='w-1/6 p-2 border-r border-gray-300'>Seasons</th>
+          <th className='w-1/12 p-2 border-r border-gray-300'>Actions</th>
         </tr>
       </thead>
       {leagues.map((league, index) => {
         return (
           <tbody key={index}>
             <tr className='border-b border-gray-300 hover:bg-gray-800'>
-              <td className='w-1/5 text-center p-2 border-r border-gray-300'>{league.name}</td>
-              <td className='w-1/5 text-center p-2 border-r border-gray-300'>{league.sport}</td>
-              <td className='w-1/5 text-center p-2 border-r border-gray-300'>{league.seasons.length}</td>
-              <td className="w-1/5 text-center p-2">
+              <td className='w-1/6 text-center p-2 border-r border-gray-300'>{league.name}</td>
+              <td className='w-1/6 text-center p-2 border-r border-gray-300'>{league.sport}</td>
+              <td className='w-1/6 text-center p-2 border-r border-gray-300'>{league.seasons.length}</td>
+              <td className="w-1/12 text-center p-2">
                 <button
                   className="bg-green-600 hover:bg-green-500 px-4 py-1 rounded-lg"
                   onClick={() => router.push(`/leagues/${league._id}`)}
@@ -173,7 +174,7 @@ const LeaugeView = (leagues: League[]) => {
 
 
 export default function League() {
-  const [userID, setUserID] = useState("");
+  const [userID, setUserID] = useState(null);
   const [leagues, setAllLeagues] = useState([]);
   const [userLeagues, setUserLeagues] = useState([]);
   const [view, setView] = useState("All Leagues");
@@ -201,15 +202,21 @@ export default function League() {
         console.error("An error occurred while fetching all leagues:", e);
       }
     }
+    const fetchUser = async () => {
+      const storedUser = sessionStorage.getItem('user');
+      if (storedUser) {
+        const result = JSON.parse(storedUser);
+        setUserID(result._id);
+      }
+    }
+    fetchUser();
+    fetchAllLeagues();
+  }, []);
+  useEffect(() => {
     const fetchUserLeagues = async () => {
-      try {
-        const storedUser = sessionStorage.getItem('user');
-        if (storedUser) {
-          const result = JSON.parse(storedUser);
-          setUserID(result._id);
-        }
 
-        if (userID !== null && userID !== "") {
+      if (userID) {
+        try {
           const response = await fetch(`/api/users/leagues?id=${userID}`, {
             method: "GET",
             headers: {
@@ -224,34 +231,37 @@ export default function League() {
           const data = await response.json();
           console.log(data)
           setUserLeagues(data);
+
+        }
+        catch (e) {
+          console.error("An error occurred while fetching user leagues:", e);
         }
       }
-      catch (e) {
-        console.error("An error occurred while fetching user leagues:", e);
-      }
     }
-    fetchAllLeagues();
     fetchUserLeagues();
-  }, [userID]);
+  }, [userID])
+
+
   return <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
     <div className="text-center">
       <h1 className="text-6xl font-bold mb-4">Leagues</h1>
     </div>
-    <div className="flex gap-6">
+    {userID && <div className="flex gap-6">
       <button className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-md transition" onClick={() => setView("All Leagues")}>
         View All Leagues
       </button>
       <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition" onClick={() => setView("User Leagues")}>
         View My Leagues
       </button>
-    </div>
+    </div>}
     {view === "All Leagues" ? LeaugeView(leagues) : LeaugeView(userLeagues)}
-    <div className="absolute bottom-4 right-4">
+    {userID && <div className="absolute bottom-4 right-4">
       <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition" onClick={openModal}>
         Create New League
       </button>
-      <Modal isOpen={modelOpen} onClose={closeModal} />
+      <Modal isOpen={modelOpen} onClose={closeModal} userId={userID} />
 
     </div>
+    }
   </div>
 }

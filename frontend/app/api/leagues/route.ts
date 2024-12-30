@@ -8,7 +8,7 @@ const handleError = (message: string, status: number) => {
 // POST - Add a new league
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, sport } = body;
+  const { name, sport, manager } = body;
 
   // Validate input
   if (!name || !sport) {
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, sport }),
+      body: JSON.stringify({ name, sport, manager }),
     });
 
     if (!response.ok) {

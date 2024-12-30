@@ -13,8 +13,18 @@ const { tryCatch } = require('../utils/tryCatch');
 // POST Create new league
 exports.addLeague = tryCatch(async function (req, res) {
     //TODO: ADD USER THAT CREATED LEAGUE AS MANAGER
+    const manager = await User.findById(req.body.manager);
+    if (!manager) throw new AppError(404, "User does not exist");
+
     var newLeague = new League(req.body);
+
+    const updatedManager = await User.updateOne({ _id: req.body.manager }, { $push: { leagues: savedLeague._id } })
+    if (!updatedManager) throw new AppError(400, 'Error occurred adding league to user\'s leagues, please try again');
+
+    newLeague.managers[0] = manager;
+    newLeague.players[0] = { player: manager };
     const savedLeague = await newLeague.save();
+
     return res.status(201).json(savedLeague);
 
 }); // League name and sport enums tests PASSED
