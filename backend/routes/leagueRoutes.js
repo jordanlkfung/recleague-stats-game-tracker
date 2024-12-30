@@ -28,6 +28,9 @@ router.route("/:_id/season")
     .post(controller.addSeasonToSeasons)
     .delete(controller.deleteSeasonFromSeasons);
 
+router.route("/:_id/userStatus")
+    .get(controller.getUserStatus);
+
 router.route("/:_id/season/:_sid")
     .get(controller.getSeasonByID);
 

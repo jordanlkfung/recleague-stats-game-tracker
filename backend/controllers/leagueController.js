@@ -18,9 +18,10 @@ exports.addLeague = tryCatch(async function (req, res) {
 
     var newLeague = new League(req.body);
 
-    const updatedManager = await User.updateOne({ _id: req.body.manager }, { $push: { leagues: savedLeague._id } })
-    if (!updatedManager) throw new AppError(400, 'Error occurred adding league to user\'s leagues, please try again');
-
+    const updatedManager = await User.updateOne({ _id: req.body.manager }, { $push: { leagues: newLeague._id } })
+    if (!updatedManager) {
+        throw new AppError(400, 'Error occurred adding league to user\'s leagues, please try again');
+    }
     newLeague.managers[0] = manager;
     newLeague.players[0] = { player: manager };
     const savedLeague = await newLeague.save();
@@ -111,6 +112,41 @@ exports.deleteLeague = async function (req, res) {
         return res.status(500).send('Internal server error');
     }
 };
+
+/** /league/:_id/userStatus */
+//GET Get user status in league
+exports.getUserStatus = tryCatch(async function (req, res) {
+    const { userId } = req.query;
+
+    const user = await User.findById(userId);
+    if (!user) throw new AppError(404, 'User was not found');
+
+    const league = await League.findById(req.params._id);
+    if (!league) throw new AppError(404, 'League was not found');
+
+    const leagueStatus = await League.findOne({
+        _id: req.params._id,
+        $or: [
+            { 'players.player': userId },
+            { managers: userId }
+        ]
+    },
+        {
+            players: { $elemMatch: { player: userId } },
+            managers: 1
+        });
+    if (!leagueStatus) return res.status(200).send({ inLeague: false, isActive: false, isManager: false });
+
+    const isManager = leagueStatus.managers.includes(userId)
+
+    return res.status(200).send(
+        {
+            inLeague: true,
+            activeStatus: leagueStatus.players[0].isActive,
+            isManager: isManager
+        });
+
+})
 
 /** /league/:_id/playerPool */
 // POST Add user to active player pool in league

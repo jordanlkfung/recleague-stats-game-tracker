@@ -8,6 +8,7 @@ interface League {
     sport: string;
     seasons: Season[];
     managers: string[];
+    players: Players[];
 }
 
 interface Season {
@@ -23,6 +24,17 @@ interface User {
     email: string,
 }
 
+interface Players {
+    isActive: boolean,
+    player: User
+}
+
+interface UserStatus {
+    inLeague: boolean,
+    isManager: boolean,
+    isActive: boolean
+}
+
 const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US'); // Formats as MM/DD/YYYY
@@ -33,9 +45,8 @@ export default function LeagueID() {
     const { leagueId } = useParams();
     const [league, setLeague] = useState<League | null>(null);
     const [userID, setUserID] = useState("");
-    const [managers, setManagers] = useState<User[]>([]);
-    const [isManager, setIsManager] = useState<boolean>(false);
     const [checkedSeasons, setCheckedSeasons] = useState<string[]>([]);
+    const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem('user');
@@ -63,39 +74,34 @@ export default function LeagueID() {
                 console.error('An error occurred while fetching league', error);
             }
         };
+        fetchLeague();
 
-        const fetchManagers = async () => {
-            try {
-                const response = await fetch(`/api/leagues/${leagueId}/manager`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
+    }, []);
 
-                if (response.ok) {
-                    const data: User[] = await response.json();
-                    setManagers(data);
-                } else {
-                    console.error('Error fetching league by ID');
+    useEffect(() => {
+        const fetchUserStatus = async () => {
+            if (userID) {
+                try {
+                    const response = await fetch(`/api/leagues/${leagueId}/userStatus?userId=${userID}`)
+
+                    if (response.ok) {
+                        const data: UserStatus = await response.json();
+                        console.log(data)
+                        setUserStatus(data);
+                    }
+                    else {
+                        console.error('Error fetching user')
+                    }
                 }
-            } catch (error) {
-                console.error('An error occurred while fetching managers', error);
+                catch (e) {
+                    console.error('An error occurred while fetching user status', e);
+                }
             }
         }
+        fetchUserStatus();
 
-        if (!isManager && userID !== "" && managers.length > 0) {
-            const isUserManager = (userID: string, managers: User[]) => {
-                return managers.some(manager => manager._id === userID);
-            };
+    }, [leagueId, userID]);
 
-            setIsManager(isUserManager(userID, managers));
-        }
-
-        fetchLeague();
-        fetchManagers();
-
-    }, [leagueId, userID, managers.length, isManager]);
 
     const handleCheckboxChange = (seasonId: string, checked: boolean) => {
         setCheckedSeasons(prev =>
@@ -190,9 +196,9 @@ export default function LeagueID() {
             </table>
             <button
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-md mt-4">
-                Join League
+                Join League CHANGE/REDIRECT TO SIGNUP IF USER IS NOT LOGGED IN
             </button>
-            {userID !== null && userID !== "" && isManager ? (
+            {userStatus && userStatus.isManager ? (
                 <div className="absolute bottom-4 right-4 flex gap-4">
                     <button
                         className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-md transition"
