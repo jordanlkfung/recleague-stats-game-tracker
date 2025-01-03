@@ -1,5 +1,5 @@
 'use client';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface League {
@@ -9,6 +9,7 @@ interface League {
     seasons: Season[];
     managers: string[];
     players: Players[];
+    joinType: string
 }
 
 interface Season {
@@ -47,6 +48,9 @@ export default function LeagueID() {
     const [userID, setUserID] = useState("");
     const [checkedSeasons, setCheckedSeasons] = useState<string[]>([]);
     const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
+    const [joinLeagueText, setJoinLeagueText] = useState("");
+    const pathName = usePathname();
+
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem('user');
@@ -70,10 +74,13 @@ export default function LeagueID() {
                 } else {
                     console.error('Error fetching league by ID');
                 }
+
             } catch (error) {
                 console.error('An error occurred while fetching league', error);
             }
         };
+
+
         fetchLeague();
 
     }, []);
@@ -86,7 +93,6 @@ export default function LeagueID() {
 
                     if (response.ok) {
                         const data: UserStatus = await response.json();
-                        console.log(data)
                         setUserStatus(data);
                     }
                     else {
@@ -98,9 +104,25 @@ export default function LeagueID() {
                 }
             }
         }
+
         fetchUserStatus();
 
     }, [leagueId, userID]);
+
+    useEffect(() => {
+        if (!userStatus) {
+            setJoinLeagueText("Sign Up to Join")
+        }
+        else if (league!.joinType === "Open") {
+            setJoinLeagueText("Join League")
+        }
+        else if (league!.joinType === "Request") {
+            setJoinLeagueText("Request To Join")
+        }
+        else if (league!.joinType === "Full") {
+            setJoinLeagueText("Full")
+        }
+    }, [userStatus])
 
 
     const handleCheckboxChange = (seasonId: string, checked: boolean) => {
@@ -150,6 +172,9 @@ export default function LeagueID() {
         return <div className="text-white text-center">Loading...</div>;
     }
 
+    const handleJoinLeague = async () => {
+        const missingData = await fetch('');
+    }
     return (
         <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
             <div className="text-center">
@@ -194,10 +219,26 @@ export default function LeagueID() {
                     ))}
                 </tbody>
             </table>
-            <button
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-md mt-4">
-                Join League CHANGE/REDIRECT TO SIGNUP IF USER IS NOT LOGGED IN
-            </button>
+
+            {!userStatus ? <button
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-md mt-4"
+                onClick={() => {
+                    router.push(`/login?redirect=${pathName}`)
+                }}
+            >
+                Login to Join
+            </button> :
+                <button
+                    className={`px-6 py-3  text-white font-semibold rounded-lg shadow-md mt-4
+                    ${joinLeagueText === "Full" ? 'bg-red-600' : 'bg-blue-600 hover:bg-blue-500'}`}
+                    {...(joinLeagueText === "Open" && { onClick: handleJoinLeague })}
+                    {...(joinLeagueText === "Request" && { onClick: handleJoinLeague })}
+                    disabled={joinLeagueText === "Full"}>
+                    {joinLeagueText}
+                </button>
+            }
+
+
             {userStatus && userStatus.isManager ? (
                 <div className="absolute bottom-4 right-4 flex gap-4">
                     <button

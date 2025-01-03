@@ -54,7 +54,12 @@ const leagueSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'
         }
-    }]
+    }],
+    joinType: {
+        type: String,
+        enum: ["Open", "Request", "Full"],
+        default: "Open",
+    }
 });
 
 leagueSchema.pre('remove', async function (next) {

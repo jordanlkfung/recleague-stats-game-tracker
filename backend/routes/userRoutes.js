@@ -18,4 +18,6 @@ router.route("/:_id/leagues")
     .post(controller.addLeagueToUser)
     .delete(controller.deleteLeagueFromUser);
 
+router.route("/:_id/fieldCheck")
+    .post(controller.checkUserInformation)
 module.exports = router;

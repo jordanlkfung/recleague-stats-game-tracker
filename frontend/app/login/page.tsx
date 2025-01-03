@@ -1,13 +1,15 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Login() {
     const router = useRouter();
+    const searchParams = useSearchParams()
     const [email, setEmail] = useState("");
     const [emailError, setEmailError] = useState<string>('');
     const [password, setPassword] = useState("");
     const [loginError, setLoginError] = useState<string | null>(null);
+    const redirect = searchParams.get('redirect');
 
     const handleFormSubmit = async (event: React.FormEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -34,7 +36,10 @@ export default function Login() {
                     }
 
                     setLoginError(null);
-                    router.push("/leagues");
+                    if (redirect)
+                        router.push(`${redirect}`);
+                    else
+                        router.push('/leagues');
                 }
             } catch (e) {
                 console.error("Login error:", e);
@@ -96,6 +101,18 @@ export default function Login() {
                     Login
                 </button>
             </form>
-        </div>
+            <p>
+                Don't have an account?{" "}
+                <a onClick={() => {
+                    if (redirect) {
+                        router.push(`/signup?redirect=${redirect}`)
+                    }
+                    else {
+                        router.push('/signup')
+                    }
+                }} className="text-blue-600 hover:text-blue-500 font-semibold">
+                    Sign Up
+                </a>
+            </p>        </div>
     );
 }

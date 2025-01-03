@@ -1,6 +1,6 @@
 'use client'
 import { FormEvent, useEffect, useState } from 'react';
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Signup() {
     const router = useRouter();
@@ -10,6 +10,9 @@ export default function Signup() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isFormValid, setIsFormValid] = useState(false);
     const [signUpError, setSignUpError] = useState<string | null>(null);
+    const searchParams = useSearchParams();
+    const redirect = searchParams.get('redirect');
+
 
     useEffect(() => {
         setIsFormValid((emailError === "") && email.length > 0 && password === confirmPassword && password.length > 0 && confirmPassword.length > 0)
@@ -30,7 +33,12 @@ export default function Signup() {
                     setSignUpError(errorData.message);
                 }
                 else {
-                    router.push("/")
+                    if (redirect) {
+                        router.push(`${redirect}`)
+                    }
+                    else {
+                        router.push("/")
+                    }
                 }
             } catch (e) {
                 //ERROR SHOW SNACKBAR
@@ -77,5 +85,15 @@ export default function Signup() {
                     Sign Up
                 </button>
             </form>
+            <p>Already have an account{" "}<a onClick={() => {
+                if (redirect) {
+                    router.push(`/login?redirect=${redirect}`);
+                }
+                else {
+                    router.push('/login');
+                }
+            }}
+                className="text-blue-600 hover:text-blue-500 font-semibold"
+            >Login</a></p>
         </div>);
 }

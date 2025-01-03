@@ -24,7 +24,7 @@ exports.getAllUsers = tryCatch(async function (req, res) {
 //PATCH update or add height, weight
 exports.updateUser = tryCatch(async function (req, res) {
     //TODO: ADD VALIDATION
-    // const { height, weight } = req.body;
+    // const { height, weight, name, sex, birthdate } = req.body;
     // const { feet, inches } = height;
     const user = await User.findById(req.params._id);
 
@@ -57,7 +57,6 @@ exports.login = tryCatch(async function (req, res) {
 
     const user = await mongoose.model('User').findOne({ email });
 
-
     if (!user) {
         throw new AppError(404, 'User not found.')
     }
@@ -77,7 +76,7 @@ exports.login = tryCatch(async function (req, res) {
 // GET user by id 
 exports.getUser = tryCatch(async function (req, res) {
 
-    const user = await User.findById(req.params._id);
+    const user = await User.findById(req.params._id).select({ password: 0, createdAt: 0 });
     if (user) {
         return res.status(200).json(user);
     } else {
@@ -164,3 +163,17 @@ exports.deleteLeagueFromUser = tryCatch(async (req, res) => {
     }
 
 }); // Test PASSED
+
+/** /user/:_id/fieldCheck */
+//POST checks if user has empty fields
+exports.checkUserInformation = tryCatch(async (req, res) => {
+    const userId = req.params._id;
+
+    const user = await User.findById(userId);
+
+    if (!user) throw new AppError(404, 'User not found');
+
+    const hasEmptyFields = !user.name || !user.birthdate || !user.sex || !user.height?.feet || !user.height?.inches || !user.weight;
+    console.log(hasEmptyFields);
+    return res.status(201).send({ hasEmptyFields: hasEmptyFields });
+});
