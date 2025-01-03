@@ -13,11 +13,12 @@ const errorHandler = (err, req, res, next) => {
         })
     }
     if (err instanceof AppError) {
-        return res.status(err.statusCode).send({ message: err.message });
+        return res.status(err.statusCode).send({
+            type: "App Error",
+            message: err.message
+        });
     }
-    const status = res.statusCode ? res.statusCode : 500; // server error
 
-    // return res.status(status).send({ message: err.message });
     return res.status(500).send({ message: "Internal Server Error" })
 }
 

@@ -4,14 +4,14 @@ var controller = require('../controllers/userController.js');
 
 router.route("")
     .post(controller.addUser)
-    .get(controller.getAllUsers)
-    .patch(controller.updateUser);
+    .get(controller.getAllUsers);
 
 router.route("/login")
     .post(controller.login);
 
 router.route("/:_id")
-    .get(controller.getUser);
+    .get(controller.getUser)
+    .patch(controller.updateUser);
 
 router.route("/:_id/leagues")
     .get(controller.getUserLeagues)
