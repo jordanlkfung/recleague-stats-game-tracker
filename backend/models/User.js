@@ -21,7 +21,12 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
-    name: {
+    firstName: {
+        type: String,
+        // required: [true, 'name is required.'],
+        match: [/^[A-Za-z\s]{2,50}$/, 'Player name must be between 2 and 50 characters long and can only include letters and spaces.'],
+    },
+    lastName: {
         type: String,
         // required: [true, 'name is required.'],
         match: [/^[A-Za-z\s]{2,50}$/, 'Player name must be between 2 and 50 characters long and can only include letters and spaces.'],

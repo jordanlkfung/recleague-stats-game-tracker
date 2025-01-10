@@ -43,7 +43,7 @@ exports.updateUser = tryCatch(async function (req, res) {
     );
 
     if (update) {
-        return res.status(204).send(update);
+        return res.status(204).send({ status: 'Success', rowsModified: update.modifiedCount });
     }
     else {
         throw new AppError(304, "No changes were made to user");
@@ -176,4 +176,48 @@ exports.checkUserInformation = tryCatch(async (req, res) => {
     const hasEmptyFields = !user.name || !user.birthdate || !user.sex || !user.height?.feet || !user.height?.inches || !user.weight;
     console.log(hasEmptyFields);
     return res.status(201).send({ hasEmptyFields: hasEmptyFields });
+});
+
+/** /user/info */
+//POST
+exports.retrieveUser = tryCatch(async function (req, res) {
+
+    const { _id } = req.body;
+
+    const user = await User.findById(_id).select({ password: 0, createdAt: 0 });
+    if (user) {
+        return res.status(200).json(user);
+    } else {
+        throw new AppError(404, 'User not found.');
+    }
+
+});
+
+exports.userUpdate = tryCatch(async function (req, res) {
+
+    const { _id } = req.body
+    const user = await User.findById(_id);
+
+    if (!user) throw new AppError(404, 'User not found');
+
+    const update = await User.updateOne({ _id: _id },
+        {
+            // $set: {
+            //     weight: weight,
+            //     "height.feet": feet,
+            //     "height.inches": inches
+            // }
+            $set: req.body,
+
+        }
+    );
+
+    if (update) {
+
+        return res.status(204).send(update);
+    }
+    else {
+        throw new AppError(304, "No changes were made to user");
+    }
+
 });

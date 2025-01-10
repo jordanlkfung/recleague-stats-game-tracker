@@ -19,5 +19,9 @@ router.route("/:_id/leagues")
     .delete(controller.deleteLeagueFromUser);
 
 router.route("/:_id/fieldCheck")
-    .post(controller.checkUserInformation)
+    .post(controller.checkUserInformation);
+
+router.route("/info")
+    .post(controller.retrieveUser)
+    .patch(controller.userUpdate);
 module.exports = router;

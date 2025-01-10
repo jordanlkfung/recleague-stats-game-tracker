@@ -5,6 +5,7 @@ const Player = require('../models/Player');
 const User = require('../models/User');
 const Game = require('../models/Game');
 const { tryCatch } = require('../utils/tryCatch');
+const AppError = require('../AppError');
 
 ///////////////////////////
 ////////// LEAGUE /////////
@@ -152,6 +153,8 @@ exports.getUserStatus = tryCatch(async function (req, res) {
 // POST Add user to active player pool in league
 exports.addUserToPlayerPool = tryCatch(async function (req, res) {
     const { userId } = req.body;
+
+    if (!userId) return res.status(400, 'No user provided');
 
     const user = await User.findById(userId);
     if (!user) throw new AppError(404, 'User was not found');

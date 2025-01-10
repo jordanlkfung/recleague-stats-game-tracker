@@ -49,6 +49,7 @@ export default function LeagueID() {
     const [checkedSeasons, setCheckedSeasons] = useState<string[]>([]);
     const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
     const [joinLeagueText, setJoinLeagueText] = useState("");
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const pathName = usePathname();
 
 
@@ -84,27 +85,25 @@ export default function LeagueID() {
         fetchLeague();
 
     }, []);
+    const fetchUserStatus = async () => {
+        if (userID) {
+            try {
+                const response = await fetch(`/api/leagues/${leagueId}/userStatus?userId=${userID}`)
 
-    useEffect(() => {
-        const fetchUserStatus = async () => {
-            if (userID) {
-                try {
-                    const response = await fetch(`/api/leagues/${leagueId}/userStatus?userId=${userID}`)
-
-                    if (response.ok) {
-                        const data: UserStatus = await response.json();
-                        setUserStatus(data);
-                    }
-                    else {
-                        console.error('Error fetching user')
-                    }
+                if (response.ok) {
+                    const data: UserStatus = await response.json();
+                    setUserStatus(data);
                 }
-                catch (e) {
-                    console.error('An error occurred while fetching user status', e);
+                else {
+                    console.error('Error fetching user')
                 }
             }
+            catch (e) {
+                console.error('An error occurred while fetching user status', e);
+            }
         }
-
+    }
+    useEffect(() => {
         fetchUserStatus();
 
     }, [leagueId, userID]);
@@ -173,7 +172,26 @@ export default function LeagueID() {
     }
 
     const handleJoinLeague = async () => {
-        const missingData = await fetch('');
+        const response = await fetch(`/api/leagues/${leagueId}/join`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ userID })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            setErrorMsg(error.message);
+        }
+        else {
+            //MODIFY
+            fetchUserStatus();
+        }
+    }
+
+    const handleRequestToJoin = async () => {
+
     }
     return (
         <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
@@ -231,8 +249,8 @@ export default function LeagueID() {
                 <button
                     className={`px-6 py-3  text-white font-semibold rounded-lg shadow-md mt-4
                     ${joinLeagueText === "Full" ? 'bg-red-600' : 'bg-blue-600 hover:bg-blue-500'}`}
-                    {...(joinLeagueText === "Open" && { onClick: handleJoinLeague })}
-                    {...(joinLeagueText === "Request" && { onClick: handleJoinLeague })}
+                    {...(joinLeagueText === "Join League" && { onClick: handleJoinLeague })}
+                    {...(joinLeagueText === "Request To Join" && { onClick: handleRequestToJoin })}
                     disabled={joinLeagueText === "Full"}>
                     {joinLeagueText}
                 </button>
