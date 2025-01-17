@@ -75,7 +75,6 @@ exports.login = tryCatch(async function (req, res) {
 /** /user/:_id */
 // GET user by id 
 exports.getUser = tryCatch(async function (req, res) {
-
     const user = await User.findById(req.params._id).select({ password: 0, createdAt: 0 });
     if (user) {
         return res.status(200).json(user);

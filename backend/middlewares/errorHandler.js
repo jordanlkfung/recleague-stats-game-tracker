@@ -12,6 +12,13 @@ const errorHandler = (err, req, res, next) => {
             message: err.message
         })
     }
+
+    if (err instanceof mongoose.Error.CastError) {
+        return res.status(500).send({
+            type: "Cast Error",
+            message: err.message
+        })
+    }
     if (err instanceof AppError) {
         return res.status(err.statusCode).send({
             type: "App Error",
