@@ -91,7 +91,7 @@ exports.getUserLeagues = tryCatch(async function (req, res) {
     const user = await User.findById(req.params._id);
 
     if (!user) {
-        throw new AppError(404, 'User not Found'); // Can populate leagues array with the League objects instead of ids
+        throw new AppError(404, 'User not Found.'); // Can populate leagues array with the League objects instead of ids
     }
 
     if (user.leagues.length > 0) {

@@ -4,8 +4,8 @@ const handleError = (message: string, status: number) => {
     return NextResponse.json({ message }, { status });
 };
 
-//POST - Join League
-export async function POST(req: NextRequest, props: { params: Promise<{ leagueId: string }> }) {
+//DELETE - Leave League
+export async function DELETE(req: NextRequest, props: { params: Promise<{ leagueId: string }> }) {
 
     const body = await req.json();
     const { userID } = body;
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ leagueId
         const { leagueId } = params;
         const response = await fetch(`${process.env.SERVER_HOST}/league/${leagueId}/playerPool`,
             {
-                method: 'POST',
+                method: 'DELETE',
                 headers: { 'Content-type': 'application/json' },
                 body: JSON.stringify({ userId: userID })
             })
@@ -33,6 +33,6 @@ export async function POST(req: NextRequest, props: { params: Promise<{ leagueId
     }
     catch (e) {
         console.error(e);
-        return handleError("Failed to join league", 500);
+        return handleError("Failed leave league", 500);
     }
 }

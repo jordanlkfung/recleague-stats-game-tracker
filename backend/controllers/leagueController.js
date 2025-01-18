@@ -136,6 +136,8 @@ exports.getUserStatus = tryCatch(async function (req, res) {
             players: { $elemMatch: { player: userId } },
             managers: 1
         });
+
+
     if (!leagueStatus) return res.status(200).send({ inLeague: false, isActive: false, isManager: false });
 
     const isManager = leagueStatus.managers.includes(userId)
@@ -170,6 +172,25 @@ exports.addUserToPlayerPool = tryCatch(async function (req, res) {
     if (!result || result.modifiedCount === 0) throw new AppError(500, 'Failed to add user to league');
 
     return res.status(201).send(result);
+});
+//DELETE
+exports.removePlayerFromPlayerPool = tryCatch(async function (req, res) {
+    const { userId } = req.body;
+
+    if (!userId) return res.status(400, 'No user provided');
+
+    const user = await User.findById(userId);
+    if (!user) throw new AppError(404, 'User was not found');
+
+    const league = await League.findById(req.params._id);
+    if (!league) throw new AppError(404, 'League was not found');
+
+    const result = await League.updateOne(
+        { _id: req.params._id },
+        { $pull: { players: { player: userId } } });
+
+    if (!result || result.modifiedCount === 0) throw new AppError(500, 'Failed to remove user from league');
+    return res.status(200).send(result);
 });
 
 /** /league/:_id/playerPool */

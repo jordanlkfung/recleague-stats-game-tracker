@@ -121,6 +121,7 @@ export default function LeagueID() {
         else if (league!.joinType === "Full") {
             setJoinLeagueText("Full")
         }
+        console.log(userStatus)
     }, [userStatus])
 
 
@@ -191,7 +192,37 @@ export default function LeagueID() {
     }
 
     const handleRequestToJoin = async () => {
+        const response = await fetch(`/api/;eagues/${leagueId}/request`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userID })
+        });
 
+        if (!response.ok) {
+            const error = await response.json();
+            setErrorMsg(error.message);
+        }
+        else {
+            //SET THE BUTTON TO REQUESTED
+        }
+    }
+
+    const handleLeaveLeague = async () => {
+        const response = await fetch(`/api/leagues/${leagueId}/leave`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userID })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            setErrorMsg(error.message);
+        }
+        else {
+            fetchUserStatus();
+        }
     }
     return (
         <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
@@ -246,14 +277,19 @@ export default function LeagueID() {
             >
                 Login to Join
             </button> :
-                <button
+                (userStatus.inLeague == false ? <button
                     className={`px-6 py-3  text-white font-semibold rounded-lg shadow-md mt-4
                     ${joinLeagueText === "Full" ? 'bg-red-600' : 'bg-blue-600 hover:bg-blue-500'}`}
                     {...(joinLeagueText === "Join League" && { onClick: handleJoinLeague })}
                     {...(joinLeagueText === "Request To Join" && { onClick: handleRequestToJoin })}
                     disabled={joinLeagueText === "Full"}>
                     {joinLeagueText}
-                </button>
+                </button> :
+                    <button className={`px-6 py-3  text-white font-semibold rounded-lg shadow-md mt-4 bg-red-600`}
+                        onClick={handleLeaveLeague}>
+                        Leave League
+                    </button>
+                )
             }
 
 
