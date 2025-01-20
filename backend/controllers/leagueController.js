@@ -173,7 +173,8 @@ exports.addUserToPlayerPool = tryCatch(async function (req, res) {
 
     return res.status(201).send(result);
 });
-//DELETE
+/** /league/:_id/playerPool */
+//DELETE - Remove player from player pool
 exports.removePlayerFromPlayerPool = tryCatch(async function (req, res) {
     const { userId } = req.body;
 

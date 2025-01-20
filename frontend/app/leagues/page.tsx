@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import InputLabel from '@mui/material/InputLabel';
+import Modal from '@mui/material/Modal';
+import MenuItem from '@mui/material/MenuItem';
+import FormHelperText from '@mui/material/FormHelperText';
+import FormControl from '@mui/material/FormControl';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import TextField from '@mui/material/TextField';
 
 
 interface League {
@@ -19,20 +26,18 @@ interface Season {
   games: string[]
 }
 
-interface ModalProps {
-  isOpen: boolean;
-  userId: string;
-  onClose: () => void;
+interface createLeagueModalProps {
+  handleClose: () => void,
+  userID: string,
+  isOpen: boolean
+
 }
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, userId }) => {
-  if (!isOpen) return null;
+
+const CreateLeagueModal: React.FC<createLeagueModalProps> = ({ handleClose, userID, isOpen }) => {
+
   const [sport, setSport] = useState<string>("Select Sport");
   const [name, setName] = useState("");
   const [errorMsg, setErrorMsg] = useState<string>('');
-
-  const handleLeagueNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setName(event.target.value);
-  }
 
   const handleCreateLeague = async () => {
     if (sport === "Select sport") {
@@ -48,94 +53,74 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, userId }) => {
     const response = await fetch('api/leagues', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, sport, manager: userId })
+      body: JSON.stringify({ name, sport, manager: userID })
     },);
-    console.log(response);
 
     if (!response.ok) {
       setErrorMsg("Error occurred while create league, please try again");
     }
     else {
-      onClose();
+      handleClose();
     }
   }
+  const handleLeagueNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setName(event.target.value);
+  }
+
+  const handleSportChange = (event: SelectChangeEvent) => {
+    setSport(event.target.value);
+  };
   return (
-    <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-xl w-1/3 flex items-center justify-center">
-        <form className="grid grid-rows-1 gap-2" onSubmit={handleCreateLeague}>
-          <label htmlFor="name" className="mb-0 text-blue-400">Name</label>
-          <input
-            type="text"
-            className="rounded-md text-black p-3 w-80 border-blue-500 outline-1 border-2"
-            name="name"
-            id="name"
-            value={name}
-            onChange={handleLeagueNameChange}
-            required
-          />
-          <label htmlFor="sport" className="mb-0 text-blue-400">Sport</label>
-          <div className="relative inline-block text-center">
-            <div className="relative group">
+    <Modal
+      open={isOpen}
+      onClose={handleClose}
+      aria-labelledby="modal-modal-title"
+      aria-describedby="modal-modal-description"
+    >
+      <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-xl w-1/3 flex items-center justify-center">
+          <form className="grid grid-rows-1 gap-4 w-2/3" onSubmit={handleCreateLeague}>
+
+            <TextField variant="outlined" onChange={handleLeagueNameChange} value={name} required className="w-full m-2" label="League Name" />
+
+            <FormControl className="w-full mt-2">
+              <InputLabel id="select-sport-label">Select Sport</InputLabel>
+
+              <Select
+                value={sport}
+                onChange={handleSportChange}
+                displayEmpty
+                label="Select Sport"
+                labelId="select-sport-label"
+              >
+                <MenuItem value="Basketball">Basketball</MenuItem>
+                <MenuItem value="Football">Football</MenuItem>
+              </Select>
+              <FormHelperText className="text-red">{errorMsg}</FormHelperText>
+            </FormControl>
+            <div className="flex justify-center gap-4 mt-4">
               <button
-                type="button"
-                className="inline-flex justify-center rounded-lg items-center w-full px-4 py-3 text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:bg-gray-700"
-                aria-haspopup="true"
-                aria-expanded="false"
-              >
-                {sport}
+                className="bg-red-700 text-white px-4 py-2 rounded-lg w-1/2"
+                onClick={handleClose}>
+                Cancel
               </button>
-
-              <div
-                className="absolute left-0 w-full mt-1 origin-top-left bg-white divide-y divide-gray-100 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-out"
-                role="menu"
-                aria-labelledby="sport-button"
-              >
-                <div className="py-1 w-full">
-                  <a
-                    href="#"
-                    className="block px-6 py-2 text-lg text-gray-700 hover:bg-gray-200"
-                    onClick={() => setSport("Basketball")}
-                    role="menuitem"
-                  >
-                    Basketball
-                  </a>
-                  <a
-                    href="#"
-                    className="block px-6 py-3 text-lg text-gray-700 hover:bg-gray-200 w-full"
-                    onClick={() => setSport("Football")}
-                    role="menuitem"
-                  >
-                    Football
-                  </a>
-                </div>
-              </div>
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg w-1/2"
+                type="submit">
+                Create
+              </button>
             </div>
+            {errorMsg && <div className="text-red-500 p-0 mb-0">{errorMsg}</div>}
+          </form>
 
-          </div>
-          <div className="flex justify-center gap-4 mt-4">
-            <button
-              className="bg-red-700 text-white px-4 py-2 rounded-lg w-1/2"
-              onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg w-1/2"
-              type="submit">
-              Create
-            </button>
-          </div>
-          {errorMsg && <div className="text-red-500 p-0 mb-0">{errorMsg}</div>}
-        </form>
-
+        </div>
       </div>
-    </div>
-  );
-
-
+    </Modal>
+  )
 }
+
 const LeaugeView = (leagues: League[]) => {
   const router = useRouter();
-
 
   return (
 
@@ -172,16 +157,19 @@ const LeaugeView = (leagues: League[]) => {
   )
 }
 
-
 export default function League() {
   const [userID, setUserID] = useState(null);
   const [leagues, setAllLeagues] = useState([]);
   const [userLeagues, setUserLeagues] = useState([]);
   const [view, setView] = useState("All Leagues");
-  const [modelOpen, setModelOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const handleOpen = () => {
+    setOpen(true);
+  };
+  const handleClose = () => {
+    setOpen(false);
+  };
 
-  const openModal = () => setModelOpen(true);
-  const closeModal = () => setModelOpen(false);
   useEffect(() => {
     const fetchAllLeagues = async () => {
       try {
@@ -242,6 +230,7 @@ export default function League() {
   }, [userID])
 
 
+
   return <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-900 to-gray-900 text-white pt-3">
     <div className="text-center">
       <h1 className="text-6xl font-bold mb-4">Leagues</h1>
@@ -256,11 +245,10 @@ export default function League() {
     </div>}
     {view === "All Leagues" ? LeaugeView(leagues) : LeaugeView(userLeagues)}
     {userID && <div className="absolute bottom-4 right-4">
-      <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition" onClick={openModal}>
+      <button className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg shadow-md transition" onClick={handleOpen}>
         Create New League
       </button>
-      <Modal isOpen={modelOpen} onClose={closeModal} userId={userID} />
-
+      <CreateLeagueModal isOpen={open} handleClose={handleClose} userID={userID} />
     </div>
     }
   </div>
