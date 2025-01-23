@@ -7,6 +7,8 @@ const Game = require('../models/Game');
 const { tryCatch } = require('../utils/tryCatch');
 const AppError = require('../AppError');
 
+const statusCode = require('../constatns/https')
+
 ///////////////////////////
 ////////// LEAGUE /////////
 ///////////////////////////
@@ -35,7 +37,7 @@ exports.addLeague = tryCatch(async function (req, res) {
 exports.getAllLeagues = async function (req, res) {
     try {
         const leagues = await League.find({});
-        res.status(200).json(leagues);
+        res.status(statusCode.OK).json(leagues);
     } catch (err) {
         res.status(500).send({ message: 'An error has occurred while getting all Leagues' });
     }
@@ -169,6 +171,7 @@ exports.addUserToPlayerPool = tryCatch(async function (req, res) {
         { $push: { players: { player: userId } } }
     );
 
+    //
     if (!result || result.modifiedCount === 0) throw new AppError(500, 'Failed to add user to league');
 
     return res.status(201).send(result);
@@ -197,7 +200,7 @@ exports.removePlayerFromPlayerPool = tryCatch(async function (req, res) {
 /** /league/:_id/playerPool */
 //GET Get users in player pool
 exports.getPlayerPool = tryCatch(async function (req, res) {
-    const league = await League.findById(req.params._id).populate('players.player', { password: 0, createdAt: 0, leaguesFollowing: 0, leagues: 0, __v: 0 }).select({});
+    const league = await League.findById(req.params._id).populate('players.player', { password: 0, createdAt: 0, leagues: 0, __v: 0 });
 
     if (!league) throw new AppError(404, 'League was not found');
 
@@ -235,8 +238,6 @@ exports.changePlayerStatus = tryCatch(async function (req, res) {
 
 });
 
-/** /league/:_id/playerPool */
-//DELETE Remove a player from playerpool
 
 
 /** /:sport */
@@ -910,3 +911,27 @@ exports.deleteGameFromSeason = async function (req, res) {
     }
 } // Test PASSED
 
+
+exports.getFreePlayers = tryCatch(async (req, res) => {
+    const leagueID = req.params._id;
+    const seasonID = req.params._sid;
+
+    const league = await League.findById(leagueID);
+    if (!league) return res.status(404).send({ message: "League not found" });
+
+    const players = await League.findById(leagueID).populate('players.player').select({ 'players.isActive': true });
+
+
+    const season = await League.findById(seasonID);
+    if (!season) return res.status(404).send({ message: "Season not found" })
+});
+
+exports.playersNotOnTeam = tryCatch(async (req, res) => {
+    const leagueID = req.params._id;
+    const teamID = req.params._tid;
+
+    const league = await League.findById(leagueID);
+    if (!league) return res.status(404).send({ message: "League not found" });
+
+    if (!league.players) return res.status()
+})

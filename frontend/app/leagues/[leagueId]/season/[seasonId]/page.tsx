@@ -78,9 +78,13 @@ const AddTeamModal: React.FC<addTeamModalProps> = ({ leagueId, seasonId, open, h
             onClose={handleClose}
         >
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
-                <div className="bg-white p-8 rounded-xl w-1/3 flex items-center justify-center">
-                    <TextField variant='outlined' value={teamName} onChange={handleTeamNameChange} label="Team Name" error={Boolean(errorMessage)} helperText={errorMessage} placeholder='Team Name'></TextField>
-                    <Button variant='outlined'>Add</Button>
+                <div className="bg-white p-8 rounded-xl w-1/3 flex items-center justify-center flex-wrap">
+                    <h2 className='font-bold text-xl mb-4'>Add Team</h2>
+                    <TextField variant='outlined' className="w-10/12" value={teamName} onChange={handleTeamNameChange} label="Team Name" error={Boolean(errorMessage)} helperText={errorMessage} placeholder='Team Name'></TextField>
+                    <div className='flex justify-evenly w-full mt-4'>
+                        <Button variant='contained' onClick={handleClose} className='w-1/3'>Cancel</Button>
+                        <Button variant='outlined' onClick={handleAddTeam} className='w-1/3' >Add</Button>
+                    </div>
                 </div>
             </div>
         </Modal>
@@ -97,8 +101,8 @@ interface addGameModalProps {
 
 const AddGameModal: React.FC<addGameModalProps> = ({ teams, seasonId, leagueId, open, handleClose }) => {
 
-    const [team1, setTeam1] = useState<Team | null>(null);
-    const [team2, setTeam2] = useState<Team | null>(null);
+    const [homeTeam, setHomeTeam] = useState('');
+    const [awayTeam, setAwayTeam] = useState('');
     const [time, setTime] = useState('');
     const [date, setDate] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
@@ -118,8 +122,8 @@ const AddGameModal: React.FC<addGameModalProps> = ({ teams, seasonId, leagueId, 
 
         console.log(`Date: ${date}`);
         console.log(`Time: ${time}`);
-        console.log(`Team 1: ${team1}`);
-        console.log(`Team 2: ${team2}`);
+        console.log(`Team 1: ${homeTeam}`);
+        console.log(`Team 2: ${awayTeam}`);
     }
 
     const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,12 +134,12 @@ const AddGameModal: React.FC<addGameModalProps> = ({ teams, seasonId, leagueId, 
         setTime(event.target.value);
     };
 
-    const handleTeam1Change = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        // setTeam1(event.target.value);
+    const handleHomeTeamChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setHomeTeam(event.target.value);
     };
 
-    const handleTeam2Change = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        // setTeam2(event.target.value);
+    const handleAwayTeamChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setAwayTeam(event.target.value);
     };
     return (
         <Modal
@@ -162,32 +166,32 @@ const AddGameModal: React.FC<addGameModalProps> = ({ teams, seasonId, leagueId, 
                             required
                             className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
                         />
-                        <label htmlFor="team1" className="mb-0 text-blue-400">Team 1</label>
+                        <label htmlFor="homeTeam" className="mb-0 text-blue-400">Home Team</label>
                         <select
-                            id="team1"
-                            value={team1?.name.toString()}
-                            onChange={handleTeam1Change}
+                            id="homeTeam"
+                            value={homeTeam}
+                            onChange={handleHomeTeamChange}
                             required
                             className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
                         >
                             <option value="">Select Team</option>
-                            {teams.map((team) => (
-                                <option key={team._id} value={team._id}>
+                            {teams.map((team, index) => (
+                                <option key={team._id} value={index}>
                                     {team.name}
                                 </option>
                             ))}
                         </select>
-                        <label htmlFor="team2" className="mb-0 text-blue-400">Team 2</label>
+                        <label htmlFor="team2" className="mb-0 text-blue-400">Away Team</label>
                         <select
                             id="team2"
-                            value={team2?.name.toString()}
-                            onChange={handleTeam2Change}
+                            value={awayTeam}
+                            onChange={handleAwayTeamChange}
                             required
                             className="rounded-md text-black p-3 w-full border-blue-500 outline-1 border-2"
                         >
                             <option value="">Select Team</option>
                             {teams
-                                .filter((team) => team._id !== team1?._id)
+                                .filter((team) => team._id !== homeTeam)
                                 .map((team) => (
                                     <option key={team._id} value={team._id}>
                                         {team.name}
