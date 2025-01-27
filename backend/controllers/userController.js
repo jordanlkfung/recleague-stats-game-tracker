@@ -3,9 +3,10 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const { tryCatch } = require('../utils/tryCatch');
 const AppError = require('../AppError');
-const { CREATED, OK } = require('../constants/https');
-const { SetAuthCookies } = require('../utils/cookies');
+const { CREATED, OK, NOT_FOUND } = require('../constants/https');
+const { SetAuthCookies, clearAuthCookies } = require('../utils/cookies');
 const Session = require('../models/Session');
+const { signToken, refreshTokenDefaults, accessTokenDefaults, verifyToken } = require('../utils/jwt');
 
 // req.params._id is the ObjectID of the User Document
 // Updating leagues needs the League's ObjectID in the request body (leagueId)
@@ -21,27 +22,13 @@ exports.addUser = tryCatch(async function (req, res) {
     const session = await Session.create({
         userId: newUser._id
     });
+    const refreshToken = signToken({ sessionId: session._id }, refreshTokenDefaults);
 
-    const refreshToken = jwt.sign(
-        { sessionId: session._id },
-        process.env.JWT_REFRESH_SECRET,
-        {
-            audience: ['user'],
-            expiresIn: '30d'
-        }
-    )
+    const accessToken = signToken({
+        userId: newUser._id,
+        sessionId: session._id
+    })
 
-    const accessToken = jwt.sign(
-        {
-            userId: newUser._id,
-            sessionId: session._id
-        },
-        process.env.JWT_REFRESH_SECRET,
-        {
-            audience: ['user'],
-            expiresIn: '15m'
-        }
-    )
     return SetAuthCookies({ res, accessToken, refreshToken })
         .status(CREATED)
         .json(savedUser);
@@ -50,7 +37,7 @@ exports.addUser = tryCatch(async function (req, res) {
 // GET Get all users
 exports.getAllUsers = tryCatch(async function (req, res) {
     const users = await User.find({});
-    res.status(200).json(users);
+    res.status(OK).json(users);
 }); // Test PASSED
 
 //PATCH update or add height, weight
@@ -60,7 +47,7 @@ exports.updateUser = tryCatch(async function (req, res) {
     // const { feet, inches } = height;
     const user = await User.findById(req.params._id);
 
-    if (!user) throw new AppError(404, 'User not found');
+    if (!user) throw new AppError(NOT_FOUND, 'User not found');
 
     const update = await User.updateOne({ _id: req.params._id },
         {
@@ -103,31 +90,31 @@ exports.login = tryCatch(async function (req, res) {
         userId: user._id
     });
 
-    const refreshToken = jwt.sign(
-        { sessionId: session._id },
-        process.env.JWT_REFRESH_SECRET,
-        {
-            audience: ['user'],
-            expiresIn: '30d'
-        }
-    )
+    const refreshToken = signToken({ sessionId: session._id }, refreshTokenDefaults);
 
-    const accessToken = jwt.sign(
-        {
-            userId: newUser._id,
-            sessionId: session._id
-        },
-        process.env.JWT_REFRESH_SECRET,
-        {
-            audience: ['user'],
-            expiresIn: '15m'
-        }
-    )
+    const accessToken = signToken({
+        userId: user._id,
+        sessionId: session._id
+    });
+
     return SetAuthCookies({ res, accessToken, refreshToken })
         .status(OK).send({ message: 'Login successful', user: { _id: user._id, email: user.email } });
 
 });
 
+exports.logout = tryCatch(async function (req, res) {
+    const accessToken = req.cookies.accessToken;
+
+    const { payload, error } = verifyToken(accessToken);
+
+    if (error)
+        throw new AppError()
+    if (payload) {
+        await Session.findByIdAndDelete(payload.sessionId);
+    }
+    return clearAuthCookies(res).status(OK).json({ message: "Logout Successful" })
+
+})
 
 /** /user/:_id */
 // GET user by id 

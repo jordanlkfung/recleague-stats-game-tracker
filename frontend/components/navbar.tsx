@@ -4,16 +4,9 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import { useState, useEffect } from 'react';
 
-const getLoginStatus = () => {
-    /**
-     * Checks to see if refresh token is in cookies
-     * if it is, it means user has logged in
-     */
-    const loginToken = document.cookie.match('(^|;)\\s*' + "refreshToken" + '\\s*=\\s*([^;]+)');
-    if (!loginToken) return false
-    return true
-}
+
 
 export default function Navbar() {
     const hiddenPages = [
@@ -26,10 +19,22 @@ export default function Navbar() {
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
     };
-    const isLoggedIn = sessionStorage.getItem("login") == "True"
 
-    const loggedIn = getLoginStatus()
-
+    const [loggedIn, setLoggedIn] = useState(false);
+    // const loggedIn = getLoginStatus()
+    const getLoginStatus = async () => {
+        /**
+         * Checks to see if refresh token is in cookies
+         * if it is, it means user has logged in
+         */
+        if (!document.cookie) return setLoggedIn(false)
+        const loginToken = document.cookie.match('(^|;)\\s*' + "refreshToken" + '\\s*=\\s*([^;]+)');
+        if (!loginToken) return setLoggedIn(false)
+        return setLoggedIn(true)
+    }
+    useEffect(() => {
+        getLoginStatus()
+    }, [])
 
     const handleClose = () => {
         setAnchorEl(null);

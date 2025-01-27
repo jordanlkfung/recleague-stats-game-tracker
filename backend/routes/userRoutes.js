@@ -9,6 +9,9 @@ router.route("")
 router.route("/login")
     .post(controller.login);
 
+router.route("/logout")
+    .get(controller.logout);
+
 router.route("/:_id")
     .get(controller.getUser)
     .patch(controller.updateUser);
