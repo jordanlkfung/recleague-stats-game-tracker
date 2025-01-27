@@ -3,6 +3,9 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const { tryCatch } = require('../utils/tryCatch');
 const AppError = require('../AppError');
+const { CREATED, OK } = require('../constants/https');
+const { SetAuthCookies } = require('../utils/cookies');
+const Session = require('../models/Session');
 
 // req.params._id is the ObjectID of the User Document
 // Updating leagues needs the League's ObjectID in the request body (leagueId)
@@ -10,9 +13,38 @@ const AppError = require('../AppError');
 /** /user */
 // POST Register
 exports.addUser = tryCatch(async function (req, res) {
+    const existingUser = await User.exists({ email: req.email });
+    if (existingUser) return res.status(500).json({ message: "User already exists" });
     var newUser = new User(req.body);
     const savedUser = await newUser.save();
-    res.status(201).json(savedUser);
+
+    const session = await Session.create({
+        userId: newUser._id
+    });
+
+    const refreshToken = jwt.sign(
+        { sessionId: session._id },
+        process.env.JWT_REFRESH_SECRET,
+        {
+            audience: ['user'],
+            expiresIn: '30d'
+        }
+    )
+
+    const accessToken = jwt.sign(
+        {
+            userId: newUser._id,
+            sessionId: session._id
+        },
+        process.env.JWT_REFRESH_SECRET,
+        {
+            audience: ['user'],
+            expiresIn: '15m'
+        }
+    )
+    return SetAuthCookies({ res, accessToken, refreshToken })
+        .status(CREATED)
+        .json(savedUser);
 }); // Duplicate email, invalid email, and invalid password tests PASSED
 
 // GET Get all users
@@ -67,7 +99,32 @@ exports.login = tryCatch(async function (req, res) {
         throw new AppError(401, 'Invalid email or password')
     }
 
-    return res.status(200).send({ message: 'Login successful', user: { _id: user._id, email: user.email } });
+    const session = await Session.create({
+        userId: user._id
+    });
+
+    const refreshToken = jwt.sign(
+        { sessionId: session._id },
+        process.env.JWT_REFRESH_SECRET,
+        {
+            audience: ['user'],
+            expiresIn: '30d'
+        }
+    )
+
+    const accessToken = jwt.sign(
+        {
+            userId: newUser._id,
+            sessionId: session._id
+        },
+        process.env.JWT_REFRESH_SECRET,
+        {
+            audience: ['user'],
+            expiresIn: '15m'
+        }
+    )
+    return SetAuthCookies({ res, accessToken, refreshToken })
+        .status(OK).send({ message: 'Login successful', user: { _id: user._id, email: user.email } });
 
 });
 

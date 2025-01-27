@@ -7,7 +7,7 @@ const Game = require('../models/Game');
 const { tryCatch } = require('../utils/tryCatch');
 const AppError = require('../AppError');
 
-const statusCode = require('../constatns/https')
+const statusCode = require('../constants/https')
 
 ///////////////////////////
 ////////// LEAGUE /////////

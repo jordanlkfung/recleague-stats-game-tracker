@@ -4,8 +4,16 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { Button } from '@mui/material';
 
+const getLoginStatus = () => {
+    /**
+     * Checks to see if refresh token is in cookies
+     * if it is, it means user has logged in
+     */
+    const loginToken = document.cookie.match('(^|;)\\s*' + "refreshToken" + '\\s*=\\s*([^;]+)');
+    if (!loginToken) return false
+    return true
+}
 
 export default function Navbar() {
     const hiddenPages = [
@@ -18,6 +26,11 @@ export default function Navbar() {
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
     };
+    const isLoggedIn = sessionStorage.getItem("login") == "True"
+
+    const loggedIn = getLoginStatus()
+
+
     const handleClose = () => {
         setAnchorEl(null);
     };
@@ -27,16 +40,13 @@ export default function Navbar() {
     }
     const userMenu = () => {
         return (
-            <div>
-                <Button
-                    aria-controls={open ? 'basic-menu' : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={open ? 'true' : undefined}
+            <div className='h-full'>
+                <button
                     onClick={handleClick}
-                    className='text-white font-bold text-lg'
+                    className='text-white font-bold text-lg hover:font-extrabold'
                 >
                     Profile
-                </Button>
+                </button>
                 <Menu
                     id="basic-menu"
                     anchorEl={anchorEl}
@@ -46,7 +56,7 @@ export default function Navbar() {
                         'aria-labelledby': 'basic-button',
                     }}
                 >
-                    <MenuItem onClick={handleClose}>My account</MenuItem>
+                    <MenuItem onClick={handleClose}><Link href="/user/update">My Profile</Link></MenuItem>
                     <MenuItem onClick={handleClose}><Link href="">My Leagues</Link></MenuItem>
                     <MenuItem onClick={handleClose}><Link href="/logout">Logout</Link></MenuItem>
                 </Menu>
@@ -62,11 +72,9 @@ export default function Navbar() {
                 <li className='h-full px-3 py-2 text-white font-bold hover:font-extrabold text-lg'>
                     <Link href="/leagues">Leagues</Link>
                 </li>
-                <li>
-                    {userMenu()}
-                </li>
                 <li className='h-full px-4 py-2 text-white font-bold hover:font-extrabold text-lg ml-auto'>
-                    <Link href={`/login?redirect=${path}`}>Login</Link>
+                    {loggedIn ? userMenu() : <Link href={`/login?redirect=${path}`}>Login</Link>}
+
                 </li>
             </ul>
         </nav>

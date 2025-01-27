@@ -85,4 +85,9 @@ userSchema.pre('save', async function (next) {
     next();
 });
 
+userSchema.methods.omitPassword = function () {
+    const user = this.toObject();
+    delete user.password;
+    return user
+}
 module.exports = mongoose.model('User', userSchema);

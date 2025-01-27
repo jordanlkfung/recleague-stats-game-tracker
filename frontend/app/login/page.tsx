@@ -28,6 +28,7 @@ export default function Login() {
                     const data = await response.json();
 
                     sessionStorage.setItem('user', JSON.stringify(data.user));
+                    sessionStorage.setItem('login', "True");
 
                     const storedUser = sessionStorage.getItem('user');
                     if (storedUser) {
@@ -113,6 +114,7 @@ export default function Login() {
                 }} className="text-blue-600 hover:text-blue-500 font-semibold">
                     Sign Up
                 </a>
-            </p>        </div>
+            </p>
+        </div>
     );
 }
