@@ -3,10 +3,11 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const { tryCatch } = require('../utils/tryCatch');
 const AppError = require('../AppError');
-const { CREATED, OK, NOT_FOUND } = require('../constants/https');
-const { SetAuthCookies, clearAuthCookies } = require('../utils/cookies');
+const { CREATED, OK, NOT_FOUND, BAD_REQUEST, UNAUTHORIZED } = require('../constants/https');
+const { setAuthCookies, clearAuthCookies, accessTokenCookieOptions } = require('../utils/cookies');
 const Session = require('../models/Session');
 const { signToken, refreshTokenDefaults, accessTokenDefaults, verifyToken } = require('../utils/jwt');
+const { thirtyDaysFromNow } = require('../utils/date');
 
 // req.params._id is the ObjectID of the User Document
 // Updating leagues needs the League's ObjectID in the request body (leagueId)
@@ -29,7 +30,7 @@ exports.addUser = tryCatch(async function (req, res) {
         sessionId: session._id
     })
 
-    return SetAuthCookies({ res, accessToken, refreshToken })
+    return setAuthCookies({ res, accessToken, refreshToken })
         .status(CREATED)
         .json(savedUser);
 }); // Duplicate email, invalid email, and invalid password tests PASSED
@@ -97,7 +98,7 @@ exports.login = tryCatch(async function (req, res) {
         sessionId: session._id
     });
 
-    return SetAuthCookies({ res, accessToken, refreshToken })
+    return setAuthCookies({ res, accessToken, refreshToken })
         .status(OK).send({ message: 'Login successful', user: { _id: user._id, email: user.email } });
 
 });
@@ -107,12 +108,42 @@ exports.logout = tryCatch(async function (req, res) {
 
     const { payload, error } = verifyToken(accessToken);
 
-    if (error)
-        throw new AppError()
+    if (!payload) throw new AppError(UNAUTHORIZED, error)
     if (payload) {
         await Session.findByIdAndDelete(payload.sessionId);
     }
     return clearAuthCookies(res).status(OK).json({ message: "Logout Successful" })
+
+});
+
+exports.refresh = tryCatch(async function (req, res) {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) throw new AppError(UNAUTHORIZED, "No refresh token");
+
+    const { payload, error } = verifyToken(refreshToken);
+
+
+    if (!payload) throw new AppError(UNAUTHORIZED, error || "Invalid Refresh Token");
+
+    const session = await Session.findById(payload.sessionId);
+
+    //Checking if session exists, or session is expired
+    if (!session || session.expiresAt.getTime() > Date.now()) throw new AppError(UNAUTHORIZED, "Session Expired");
+
+
+    const accessToken = signToken({ userId: session.userId, sessionId: session._id });
+
+    //refreshing session if it expires within 24 hours
+    const refreshNeeded = session.expiresAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000;
+    if (refreshNeeded) {
+        session.expiresAt = thirtyDaysFromNow();
+        await session.save();
+        const newRefreshToken = refreshNeeded && signToken({ sessionId: session._id }, refreshTokenDefaults);
+        return setAuthCookies(res, accessToken, newRefreshToken).json({ message: "Access Token Refreshed" });
+    }
+
+    return res.status(OK).cookies("accessToken", accessToken, accessTokenCookieOptions).json({ message: "Access Token Refreshed" });
 
 })
 
@@ -222,34 +253,29 @@ exports.checkUserInformation = tryCatch(async (req, res) => {
 });
 
 /** /user/info */
-//POST
+//Get
 exports.retrieveUser = tryCatch(async function (req, res) {
 
-    const { _id } = req.body;
+    const { userId } = req;
 
-    const user = await User.findById(_id).select({ password: 0, createdAt: 0 });
+    const user = await User.findById(userId);
     if (user) {
-        return res.status(200).json(user);
+        return res.status(200).json(user.omitPassword());
     } else {
         throw new AppError(404, 'User not found.');
     }
 
 });
-
+//PATCH
 exports.userUpdate = tryCatch(async function (req, res) {
 
-    const { _id } = req.body
-    const user = await User.findById(_id);
+    const { userId } = req
+    const user = await User.findById(userId);
 
     if (!user) throw new AppError(404, 'User not found');
 
-    const update = await User.updateOne({ _id: _id },
+    const update = await User.updateOne({ _id: userId },
         {
-            // $set: {
-            //     weight: weight,
-            //     "height.feet": feet,
-            //     "height.inches": inches
-            // }
             $set: req.body,
 
         }

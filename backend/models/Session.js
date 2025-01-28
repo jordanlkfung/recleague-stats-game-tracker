@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { thirtyDaysFromNow } = require('../constants/date');
+const { thirtyDaysFromNow } = require('../utils/date');
 const SessionSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Types.ObjectId,

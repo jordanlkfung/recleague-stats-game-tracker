@@ -30,10 +30,13 @@ app.use(logger);
 mongoose.connect(process.env.DB_URI);
 
 /** Routes */
+var authRoute = require(`./routes/authRoutes.js`);
+app.use(`/auth`, authRoute);
 // User Route
 User = require('./models/User.js');
 var userRoute = require('./routes/userRoutes.js');
-app.use('/user', userRoute);
+var authenticate = require('./middlewares/authenticate.js');
+app.use('/user', authenticate, userRoute);
 
 // League Route
 League = require('./models/League.js');

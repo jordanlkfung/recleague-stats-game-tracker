@@ -1,11 +1,16 @@
 const { logEvents } = require('./logger');
 const AppError = require('../AppError');
 const mongoose = require('mongoose');
+const { REFRESH_PATH, clearAuthCookies } = require('../utils/cookies');
 
 const errorHandler = (err, req, res, next) => {
     logEvents(`${err.name}: ${err.message}\t${req.method}\t${req.url}\t${req.headers.origin}`, 'errLog.log');
     console.log(err.stack);
 
+    //removing cookies
+    if (req.path == REFRESH_PATH) {
+        clearAuthCookies(res);
+    }
     if (err instanceof mongoose.Error.ValidationError) {
         return res.status(400).send({
             type: "Validation Error",

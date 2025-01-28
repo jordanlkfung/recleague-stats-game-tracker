@@ -1,5 +1,6 @@
-const { thirtyDaysFromNow, fifteenMinutesFromNow, } = require('../constants/date');
+const { thirtyDaysFromNow, fifteenMinutesFromNow, } = require('./date');
 
+const REFRESH_PATH = "/user/refresh";
 
 const defaults = {
     sameSite: "strict",
@@ -7,18 +8,23 @@ const defaults = {
     secure: false
     //TODO: CHANGE TO SECURE = TRUE WHEN NOT IN DEVELOPEMENT
 }
-const REFRESH_PATH = "/auth/refresh";
-const SetAuthCookies = ({ res, accessToken, refreshToken }) =>
+const accessTokenCookieOptions = {
+    ...defaults, expires: fifteenMinutesFromNow()
+}
+const refreshTokenCookieOptions = {
+    ...defaults, expires: thirtyDaysFromNow(), path: REFRESH_PATH
+}
+const setAuthCookies = ({ res, accessToken, refreshToken }) =>
     res.cookie("accessToken",
         accessToken,
-        { ...defaults, expires: fifteenMinutesFromNow() })
+        accessTokenCookieOptions)
         .cookie("refreshToken",
             refreshToken,
-            { ...defaults, expires: thirtyDaysFromNow(), path: REFRESH_PATH });
+            refreshTokenCookieOptions);
 
 
 const clearAuthCookies = (res) =>
     res
         .clearCookie("accessToken")
         .clearCookie("refreshToken", { path: REFRESH_PATH });
-module.exports = { SetAuthCookies, clearAuthCookies };
+module.exports = { setAuthCookies, clearAuthCookies, refreshTokenCookieOptions, accessTokenCookieOptions, REFRESH_PATH };

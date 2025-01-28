@@ -12,6 +12,10 @@ router.route("/login")
 router.route("/logout")
     .get(controller.logout);
 
+router.route("/info")
+    .get(controller.retrieveUser)
+    .patch(controller.userUpdate);
+
 router.route("/:_id")
     .get(controller.getUser)
     .patch(controller.updateUser);
@@ -24,7 +28,5 @@ router.route("/:_id/leagues")
 router.route("/:_id/fieldCheck")
     .post(controller.checkUserInformation);
 
-router.route("/info")
-    .post(controller.retrieveUser)
-    .patch(controller.userUpdate);
+
 module.exports = router;

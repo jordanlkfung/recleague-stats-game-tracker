@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Login() {
@@ -11,7 +11,7 @@ export default function Login() {
     const [loginError, setLoginError] = useState<string | null>(null);
     const redirect = searchParams.get('redirect');
 
-    const handleFormSubmit = async (event: React.FormEvent<HTMLButtonElement>) => {
+    const handleFormSubmit = async (event: FormEvent<HTMLButtonElement>) => {
         event.preventDefault();
         if (emailError === "") {
             try {
